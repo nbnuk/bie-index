@@ -958,7 +958,7 @@ class ImportService {
                     def capitaliser = TitleCapitaliser.create(grailsApplication.config.commonNameDefaultLanguage)
                     def doc = [:]
                     doc["id"] = UUID.randomUUID().toString() // doc key
-                    doc["idxtype"] = IndexDocType.TAXON // required field
+                    doc["idxtype"] = IndexDocType.TAXON // required field - should be IndexDocType.COMMON??? RR ****
                     doc["guid"] = "ALA_${item.name?.replaceAll("[^A-Za-z0-9]+", "_")}" // replace non alpha-numeric chars with '_' - required field
                     doc["datasetID"] = drUid
                     doc["datasetName"] = "Conservation list for ${SolrFieldName}"
@@ -2062,7 +2062,7 @@ class ImportService {
             if(commonNames) {
                 update["commonName"] = [set: names]
                 update["commonNameExact"] = [set: names]
-                update["commonNameSingle"] = [set: names.first() ]
+                update["commonNameSingle"] = [set: names.first() ] /* RR rather get preferred name - it should have higher priority *** TODO */
             }
         }
         def identifiers = searchService.lookupIdentifier(guid, !online)
