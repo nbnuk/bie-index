@@ -4,26 +4,6 @@
     "taxonRank": "order",
     "taxa": [
       {
-        "name": "DASYUROMORPHIA",
-        "common": "Carnivorous Marsupials"
-      },
-      {
-        "name": "DIPROTODONTIA",
-        "common": "Herbivorous Marsupials"
-      },
-      {
-        "name": "NOTORYCTEMORPHIA",
-        "common": "Marsupial Moles"
-      },
-      {
-        "name": "PERAMELEMORPHIA",
-        "common": "Bandicoots, Bilbies"
-      },
-      {
-        "name": "MONOTREMATA",
-        "common": "Monotremes"
-      },
-      {
         "name": "ARTIODACTYLA",
         "common": "Even-toed hoofed"
       },
@@ -32,32 +12,36 @@
         "common": "Carnivores"
       },
       {
-        "name": "CETACEA",
-        "common": "Dolphins, Porpoises, Whales"
+        "name": "CETARTIODACTYLA",
+        "common": "Whales and dolphins"
       },
       {
         "name": "CHIROPTERA",
         "common": "Bats"
       },
       {
+        "name": "DIPROTODONTIA",
+        "common": "Herbivorous marsupials"
+      },
+      {
         "name": "INSECTIVORA",
-        "common": "Shrews, Hedgehogs"
+        "common": "Shrews, moles and hedgehogs"
       },
       {
         "name": "LAGOMORPHA",
-        "common": "Hares, Pikas, Rabbits"
+        "common": "Rabbits and hares"
       },
       {
         "name": "PERRISODACTYLA",
-        "common": "Odd-toed hoofed"
+        "common": "Horses and donkeys"
+      },
+      {
+        "name": "PRIMATES",
+        "common": "Primates"
       },
       {
         "name": "RODENTIA",
         "common": "Rodents"
-      },
-      {
-        "name": "SIRENIA",
-        "common": "Dugongs, Manatees, Sea Cows"
       }
     ]
   },
@@ -67,27 +51,27 @@
     "taxa": [
       {
         "name": "ANSERIFORMES",
-        "common": "Ducks, Geese, Swans"
+        "common": "Ducks, geese and swans"
       },
       {
         "name": "APODIFORMES",
-        "common": "Hummingbirds, Swifts"
+        "common": "Swifts"
       },
       {
-        "name": "CAPRIMULGIFORMES",
-        "common": "Nightjars, Frogmouths, Potoos"
+        "name": "BUCEROTIFORMES",
+        "common": "Hornbills"
       },
       {
         "name": "CHARADRIIFORMES",
-        "common": "Waders, Gulls, Auks"
+        "common": "Sandpipers, plovers, gulls and auks"
       },
       {
         "name": "CICONIIFORMES",
-        "common": "Bitterns, Ibises"
+        "common": "Herons, egrets, bitterns and spoonbills"
       },
       {
         "name": "COLUMBIFORMES",
-        "common": "Doves"
+        "common": "Pigeons and doves"
       },
       {
         "name": "CORACIIFORMES",
@@ -99,27 +83,35 @@
       },
       {
         "name": "FALCONIFORMES",
-        "common": "Falcons"
+        "common": "Falcons, hawks, eagles and ospreys"
       },
       {
         "name": "GALLIFORMES",
-        "common": "Fowls"
+        "common": "Partridges, quails and pheasants"
+      },
+      {
+        "name": "GAVIIFORMES",
+        "common": "Divers"
       },
       {
         "name": "GRUIFORMES",
-        "common": "Cranes"
+        "common": "Coots, cranes and rails"
       },
       {
         "name": "PASSERIFORMES",
-        "common": "Perching Birds"
+        "common": "Perching birds"
       },
       {
         "name": "PELECANIFORMES",
-        "common": "Large waterbirds"
+        "common": "Pelicans, cormorants and gannets"
       },
       {
         "name": "PHOENICOPTERIFORMES",
         "common": "Flamingos"
+      },
+      {
+        "name": "PICIFORMES",
+        "common": "Woodpeckers"
       },
       {
         "name": "PODICIPEDIFORMES",
@@ -127,41 +119,33 @@
       },
       {
         "name": "PROCELLARIIFORMES",
-        "common": "Petrels, Fulmars"
+        "common": "Petrels and fulmars"
       },
       {
-        "name": "PSITTACIFORMES",
-        "common": "Parrots"
-      },
-      {
-        "name": "SPHENISCIFORMES",
-        "common": "Penguins"
+        "name": "RHEIFORMES",
+        "common": "Rheas"
       },
       {
         "name": "STRIGIFORMES",
-        "common": "Owls"
+        "common": "Nightjars and owls"
       },
       {
         "name": "STRUTHIONIFORMES",
         "common": "Ostriches"
       },
       {
-        "name": "TURNICIFORMES",
-        "common": "Buttonquails"
+        "name": "UPUPIFORMES",
+        "common": "Hoopoes"
       }
     ]
   },
   {
-    "speciesGroup": "Insects and Spiders",
+    "speciesGroup": "Insects",
     "taxonRank": "order",
     "taxa": [
       {
         "name": "ARCHAEOGNATHA",
         "common": "Bristletails"
-      },
-      {
-        "name": "BLATTODEA",
-        "common": "Cockroaches, Termites"
       },
       {
         "name": "COLEOPTERA",
@@ -172,28 +156,28 @@
         "common": "Earwigs"
       },
       {
-        "name": "DIPTERA",
-        "common": "Flies, Mosquitoes"
+        "name": "DICTYOPTERA",
+        "common": "Cockroaches"
       },
       {
-        "name": "EMBIOPTERA",
-        "common": "Webspinners"
+        "name": "DIPTERA",
+        "common": "True flies"
       },
       {
         "name": "EPHEMEROPTERA",
-        "common": "Mayflies, Shadlfies"
+        "common": "Mayflies"
       },
       {
         "name": "HEMIPTERA",
-        "common": "Cicadas, Aphids, Planthoppers, Leafhoppers, Shield Bugs"
+        "common": "True bugs"
       },
       {
         "name": "HYMENOPTERA",
-        "common": "Wasps, Ants, Bees, Sawflies"
+        "common": "Ants, bees and wasps"
       },
       {
         "name": "LEPIDOPTERA",
-        "common": "Butterflies, Moths"
+        "common": "Butterflies and moths"
       },
       {
         "name": "MANTODEA",
@@ -201,27 +185,27 @@
       },
       {
         "name": "MECOPTERA",
-        "common": "Scorpionflies, Hangingflies"
+        "common": "Scorpionflies"
       },
       {
         "name": "MEGALOPTERA",
-        "common": "Alderflies, Dobsonflies, Fishflies"
+        "common": "Alderflies"
       },
       {
         "name": "NEUROPTERA",
-        "common": "Lacewings, Mantidflies, Antlions"
+        "common": "Lacewings"
       },
       {
         "name": "ODONATA",
-        "common": "Dragonflies, Damselflies"
+        "common": "Dragonflies"
       },
       {
         "name": "ORTHOPTERA",
-        "common": "Grasshoppers, Crickets, Locusts, Katydids, Weta, Lubber"
+        "common": "Grasshoppers and crickets"
       },
       {
         "name": "PHASMIDA",
-        "common": "Stick Insects, Phasmids"
+        "common": "Stick insects"
       },
       {
         "name": "PHTHIRAPTERA",
@@ -233,7 +217,11 @@
       },
       {
         "name": "PSOCOPTERA",
-        "common": "Booklice, Barklice, Barkflies"
+        "common": "Booklice"
+      },
+      {
+        "name": "RAPHIDIOPTERA",
+        "common": "Snakefiles"
       },
       {
         "name": "SIPHONAPTERA",
@@ -241,7 +229,7 @@
       },
       {
         "name": "STREPSIPTERA",
-        "common": "Twisted-Wing Parasites"
+        "common": "Stylops"
       },
       {
         "name": "THYSANOPTERA",
@@ -249,45 +237,25 @@
       },
       {
         "name": "TRICHOPTERA",
-        "common": "Caddisflies, Sedge-flies or Rail-flies"
-      },
-      {
-        "name": "ZORAPTERA",
-        "common": "Zorapterans"
+        "common": "Caddisflies"
       },
       {
         "name": "ZYGENTOMA",
         "common": "Silverfish"
-      },
-      {
-        "name": "ARANEAE",
-        "common": "Spiders"
       }
     ]
   },
   {
     "speciesGroup": "Amphibians",
-    "taxonRank": "family",
+    "taxonRank": "order",
     "taxa": [
       {
-        "name": "BUFONIDAE",
-        "common": "True Toads"
+        "name": "ANURA",
+        "common": "Frogs and toads"
       },
       {
-        "name": "HYLIDAE",
-        "common": "Tree Frogs"
-      },
-      {
-        "name": "MICROHYLIDAE",
-        "common": "Narrow-Mouthed Frogs"
-      },
-      {
-        "name": "MYOBATRACHIDAE",
-        "common": "Australian Ground Frogs"
-      },
-      {
-        "name": "RANIDAE",
-        "common": "True Frogs"
+        "name": "CAUDATA",
+        "common": "Salamanders, sirens and newts"
       }
     ]
   },
@@ -296,226 +264,38 @@
     "taxonRank": "order",
     "taxa": [
       {
-        "name": "CROCODYLIA",
-        "common": "Crocodiles"
-      },
-      {
         "name": "SQUAMATA",
-        "common": "Lizards, Snakes"
+        "common": "Snakes and lizards"
       },
       {
         "name": "TESTUDINES",
-        "common": "Tortoises, Turtles, Terrapins"
+        "common": "Turtles and terrapins"
       }
     ]
   },
   {
-    "speciesGroup": "Fish",
-    "taxonRank": "order",
+    "speciesGroup": "Fishes",
+    "taxonRank": "class",
     "taxa": [
       {
-        "name": "MYXINIFORMES",
-        "common": "Hagfishes"
-      },
-      {
-        "name": "CARCHARHINIFORMES",
-        "common": "Ground Sharks"
-      },
-      {
-        "name": "HETERODONTIFORMES",
-        "common": "Bullhead Sharks"
-      },
-      {
-        "name": "HEXANCHIFORMES",
-        "common": "Cow Sharks"
-      },
-      {
-        "name": "LAMNIFORMES",
-        "common": "Mackerel Sharks"
-      },
-      {
-        "name": "MYLIOBATIFORMES",
-        "common": "Batoids"
-      },
-      {
-        "name": "ORECTOLOBIFORMES",
-        "common": "Carpet Sharks"
-      },
-      {
-        "name": "PRISTIFORMES",
-        "common": "Sawfish"
-      },
-      {
-        "name": "PRISTIOPHORIFORMES",
-        "common": "Saw Sharks"
-      },
-      {
-        "name": "RAJIFORMES",
-        "common": "Softnose Skates"
-      },
-      {
-        "name": "RHINOBATIFORMES",
-        "common": "Guitarfish"
-      },
-      {
-        "name": "SQUALIFORMES",
-        "common": "Dogfish Sharks"
-      },
-      {
-        "name": "SQUATINIFORMES",
-        "common": "Angel Sharks"
-      },
-      {
-        "name": "TORPEDINIFORMES",
-        "common": "Electric Rays"
-      },
-      {
-        "name": "CHIMAERIFORMES",
-        "common": "Chimaeras"
-      },
-      {
-        "name": "CERATODONTIFORMES",
-        "common": "Lungfish"
-      },
-      {
-        "name": "CLUPEIFORMES",
-        "common": "Anchovies "
-      },
-      {
-        "name": "ALBULIFORMES",
-        "common": "Bonefishes"
-      },
-      {
-        "name": "ANGUILLIFORMES",
-        "common": "Eels"
-      },
-      {
-        "name": "ELOPIFORMES",
-        "common": "Tarpons"
-      },
-      {
-        "name": "NOTACANTHIFORMES",
-        "common": "Spiny Eels"
-      },
-      {
-        "name": "SACCOPHARYNGIFORMES",
-        "common": "Sackpharynx Fishes"
-      },
-      {
-        "name": "ATHERINIFORMES",
-        "common": "Rainbow Fishes"
-      },
-      {
-        "name": "BELONIFORMES",
-        "common": "Halfbeeks"
-      },
-      {
-        "name": "BERYCIFORMES",
+        "name": "ACTINOPTERYGII",
         "common": "Ray-finned fishes"
       },
       {
-        "name": "CYPRINODONTIFORMES",
-        "common": "Killifishes"
+        "name": "CEPHALASPIDOMORPHI",
+        "common": "Lampreys"
       },
       {
-        "name": "GASTEROSTEIFORMES",
-        "common": "Dragonfishes"
+        "name": "ELASMOBRANCHII",
+        "common": "Sharks, rays, skates and sawfish"
       },
       {
-        "name": "MUGILIFORMES",
-        "common": "Mullet fish"
+        "name": "HOLOCEPHALI",
+        "common": "Ratfish"
       },
       {
-        "name": "PERCIFORMES",
-        "common": "Perch-like Fishes"
-      },
-      {
-        "name": "PLEURONECTIFORMES",
-        "common": "Flatfishes"
-      },
-      {
-        "name": "SCORPAENIFORMES",
-        "common": "Scorpion Fishes, Sculpins"
-      },
-      {
-        "name": "STEPHANOBERYCIFORMES",
-        "common": "Deep-sea ray-finned fishes"
-      },
-      {
-        "name": "SYNBRANCHIFORMES",
-        "common": "Swamp Eels"
-      },
-      {
-        "name": "TETRAODONTIFORMES",
-        "common": "Cowfishes"
-      },
-      {
-        "name": "ZEIFORMES",
-        "common": "Boarfishes"
-      },
-      {
-        "name": "AULOPIFORMES",
-        "common": "Marine ray-finned fish"
-      },
-      {
-        "name": "LAMPRIDIFORMES",
-        "common": "Opahs"
-      },
-      {
-        "name": "CYPRINIFORMES",
-        "common": "Minnows"
-      },
-      {
-        "name": "GONORHYNCHIFORMES",
-        "common": "Milkfishes"
-      },
-      {
-        "name": "SILURIFORMES",
-        "common": "Catfishes"
-      },
-      {
-        "name": "BATRACHOIDIFORMES",
-        "common": "Batrachoidiforms"
-      },
-      {
-        "name": "GADIFORMES",
-        "common": "Cods"
-      },
-      {
-        "name": "LOPHIIFORMES",
-        "common": "Anglerfishes"
-      },
-      {
-        "name": "OPHIDIIFORMES",
-        "common": "Ophidiiforms"
-      },
-      {
-        "name": "POLYMIXIIFORMES",
-        "common": "Beardfishes"
-      },
-      {
-        "name": "ARGENTINIFORMES",
-        "common": "Baldfishes,Tubeshoulders"
-      },
-      {
-        "name": "SALMONIFORMES",
-        "common": "Salmons"
-      },
-      {
-        "name": "MYCTOPHIFORMES",
-        "common": "Latern Fishes, Neoscopelids"
-      },
-      {
-        "name": "ATELEOPODIFORMES",
-        "common": "Jellynose Fishes"
-      },
-      {
-        "name": "STOMIIFORMES",
-        "common": "Deep-sea ray-finned fishes"
-      },
-      {
-        "name": "OSTEOGLOSSIFORMES",
-        "common": "Bonytongues"
+        "name": "MYXINI",
+        "common": "Hagfish"
       }
     ]
   },
@@ -524,20 +304,20 @@
     "taxonRank": "class",
     "taxa": [
       {
-        "name": "APLACOPHORA",
-        "common": "Solenogasters"
+        "name": "BIVALVIA",
+        "common": "Clams, mussels and oysters"
       },
       {
-        "name": "BIVALVIA",
-        "common": "Mussels, Clams"
+        "name": "CAUDOFOVEATA",
+        "common": "Chaetoderma"
       },
       {
         "name": "CEPHALOPODA",
-        "common": "Cuttlefish"
+        "common": "Squid, octopus and nautilus"
       },
       {
         "name": "GASTROPODA",
-        "common": "Gastropods, Slugs, Snails"
+        "common": "Slugs and snails"
       },
       {
         "name": "POLYPLACOPHORA",
@@ -545,7 +325,11 @@
       },
       {
         "name": "SCAPHOPODA",
-        "common": "Tooth Shells"
+        "common": "Tusk shells"
+      },
+      {
+        "name": "SOLENOGASTRES",
+        "common": "Solenogasters"
       }
     ]
   },
@@ -555,19 +339,121 @@
     "taxa": [
       {
         "name": "BRANCHIOPODA",
-        "common": "Fairy shrimp, Clam shrimp"
+        "common": "Fairy shrimp and clam shrimp"
       },
       {
         "name": "MALACOSTRACA",
-        "common": "Crabs, Lobsters"
+        "common": "Crabs and lobsters"
       },
       {
         "name": "MAXILLOPODA",
-        "common": "Barnacles, Copepods"
+        "common": "Barnacles and copepods"
       },
       {
         "name": "OSTRACODA",
-        "common": "Seed shrimp"
+        "common": "Mussel shrimp"
+      }
+    ]
+  },
+  {
+    "speciesGroup": "Myriapods",
+    "taxonRank": "class",
+    "taxa": [
+      {
+        "name": "CHILOPODA",
+        "common": "Centipedes"
+      },
+      {
+        "name": "DIPLOPODA",
+        "common": "Millipedes"
+      },
+      {
+        "name": "PAUROPODA",
+        "common": "Pauropoda"
+      },
+      {
+        "name": "SYMPHYLA",
+        "common": "Symphylid"
+      }
+    ]
+  },
+  {
+    "speciesGroup": "SpidersAndAllies",
+    "taxonRank": "class",
+    "taxa": [
+      {
+        "name": "Pantopoda",
+        "common": "Sea spiders"
+      },
+      {
+        "name": "Araneae",
+        "common": "Spiders"
+      },
+      {
+        "name": "Ixodida",
+        "common": "Ticks"
+      },
+      {
+        "name": "Opiliones",
+        "common": "Harvestmen"
+      },
+      {
+        "name": "Oribatida",
+        "common": "Oribatid mites"
+      },
+      {
+        "name": "Prostigmata",
+        "common": "Mites"
+      },
+      {
+        "name": "Pseudoscorpiones",
+        "common": "False scorpions"
+      },
+      {
+        "name": "Scorpiones",
+        "common": "Scorpions"
+      }
+    ]
+  },
+  {
+    "speciesGroup": "Worms",
+    "taxonRank": "phylum",
+    "taxa": [
+      {
+        "name": "ANNELIDA",
+        "common": "Ragworms, earthworms and leeches"
+      },
+      {
+        "name": "CHAETOGNATHA",
+        "common": "Arrow worms"
+      },
+      {
+        "name": "ECHIURA",
+        "common": "Spoon worms"
+      },
+      {
+        "name": "NEMATODA",
+        "common": "Roundworms"
+      },
+      {
+        "name": "NEMATOMORPHA",
+        "common": "Hairworms"
+      },
+      {
+        "name": "NEMERTEA",
+        "common": "Ribbon worms"
+      },
+      {
+        "name": "PLATYHELMINTHES",
+        "common": "Flatworms"
+      },
+      {
+        "name": "PRIAPULIDA",
+        "common": "Priapulid worms"
+      },
+      {
+        "name": "SIPUNCULA",
+        "common": "Peanut worms"
       }
     ]
   },
@@ -576,24 +462,32 @@
     "facetName": "species_group",
     "taxa": [
       {
-        "name": "Monocots",
-        "common": "Monocots"
+        "name": "Algae",
+        "common": "Algae"
       },
       {
-        "name": "Dicots",
-        "common": "Dicots"
+        "name": "Bryophytes",
+        "common": "Bryophytes"
+      },
+      {
+        "name": "Hornworts",
+        "common": "Hornworts"
+      },
+      {
+        "name": "Gymnosperms",
+        "common": "Conifers and Ginkgo"
+      },
+      {
+        "name": "FernsAndAllies",
+        "common": "Ferns and allies"
+      },
+      {
+        "name": "Clubmosses",
+        "common": "Clubmosses and firmosses"
       },
       {
         "name": "Angiosperms",
         "common": "Flowering plants"
-      },
-      {
-        "name": "FernsAndAllies",
-        "common": "Ferns and Allies"
-      },
-      {
-        "name": "Gymnosperms",
-        "common": "Conifers, Cycads"
       }
     ]
   },
@@ -603,11 +497,11 @@
     "taxa": [
       {
         "name": "Ascomycota",
-        "common": "Asco's"
+        "common": "Ascomycota"
       },
       {
         "name": "Basidiomycota",
-        "common": "Basidio's"
+        "common": "Basidiomycota"
       },
       {
         "name": "Chytridiomycota",
