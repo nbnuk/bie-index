@@ -83,7 +83,7 @@ dependencies {
     compile 'org.grails.plugins:external-config:1.1.1'
 
     //compile group: 'org.grails.plugins', name: 'ala-bootstrap3', version: '3.0.3', changing: true
-    compile(group: 'org.grails.plugins', name: 'ala-auth', version:'3.1.0', changing: true) { /* RR was 3.1.0-SNAPSHOT */
+    compile(group: 'org.grails.plugins', name: 'ala-auth', version:'3.0.4', changing: true) { /* RR was 3.1.0-SNAPSHOT;  */
         exclude group: 'javax.servlet', module: 'servlet-api'
     }
     compile group: 'org.grails.plugins', name: 'ala-admin-plugin', version: '2.0', changing: true

@@ -213,7 +213,7 @@ class ImportService {
         }
         indexService.indexBatch(batch)
         log"Finished indexing ${layers.size()} layers"
-        log "Finsihed layer import"
+        log "Finished layer import"
     }
 
     def importLocalities() {
@@ -1838,6 +1838,7 @@ class ImportService {
         js.setType(JsonParserType.INDEX_OVERLAY)
         log("Getting species groups")
         def speciesGroupMapper = speciesGroupService.invertedSpeciesGroups
+        //log("speciesGroupMapper: " + speciesGroupMapper.toString())
         log("Starting denormalisation scan for ${online ? 'online' : 'offline'} index")
         log("Clearing existing denormalisations")
         try {
