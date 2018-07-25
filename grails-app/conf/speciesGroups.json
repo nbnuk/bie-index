@@ -585,10 +585,10 @@
     },
     {
         "speciesGroup": "Plants",
-        "taxonRank": "phylum",
+        "taxonRank": "class",
         "taxa": [
             {
-                "name": "Coniferophyta",
+                "name": "Pinopsida",
                 "common": "Gymnosperms and Ginkgo"
             }
         ]
@@ -653,6 +653,17 @@
             {
 
                 "name": "Anthophyta",
+                "common": "Flowering plants"
+            }
+        ]
+    },
+    {
+        "speciesGroup": "Plants",
+        "taxonRank": "class",
+        "taxa": [
+            {
+
+                "name": "Magnoliopsida",
                 "common": "Flowering plants"
             }
         ]
