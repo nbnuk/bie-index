@@ -758,6 +758,22 @@
     {
         "branch": null,
         "notes": null,
+        "otherNames": [],
+        "rank": "microspecies",
+        "rankGroup": "subspecies",
+        "rankID": 8250
+    },
+    {
+        "branch": null,
+        "notes": null,
+        "otherNames": [],
+        "rank": "morphotype",
+        "rankGroup": "subspecies",
+        "rankID": 8300
+    },
+    {
+        "branch": null,
+        "notes": null,
         "otherNames": [
             "un-positioned ranks"
         ],
