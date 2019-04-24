@@ -839,6 +839,14 @@
     {
         "branch": null,
         "notes": null,
+        "otherNames": [],
+        "rank": "facies",
+        "rankGroup": "subspecies",
+        "rankID": 8305
+    },
+    {
+        "branch": null,
+        "notes": null,
         "otherNames": [
             "un-positioned ranks"
         ],
