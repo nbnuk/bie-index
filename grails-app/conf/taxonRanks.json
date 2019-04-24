@@ -43,6 +43,14 @@
         "branch": null,
         "notes": null,
         "otherNames": [],
+        "rank": "infrakingdom",
+        "rankGroup": "kingdom",
+        "rankID": 1300
+    },
+    {
+        "branch": null,
+        "notes": null,
+        "otherNames": [],
         "rank": "superphylum",
         "rankGroup": "phylum",
         "rankID": 1800
@@ -69,6 +77,14 @@
         "rank": "subplylum",
         "rankGroup": "phylum",
         "rankID": 2200
+    },
+    {
+        "branch": null,
+        "notes": null,
+        "otherNames": [],
+        "rank": "infraphylum",
+        "rankGroup": "phylum",
+        "rankID": 2300
     },
     {
         "branch": null,
@@ -368,7 +384,8 @@
         "branch": null,
         "notes": "A named collection of closely related genera",
         "otherNames": [
-            "aggregate genera"
+            "aggregate genera",
+            "genus aggregate"
         ],
         "rank": "genus group",
         "rankGroup": "genus",
@@ -385,7 +402,9 @@
     {
         "branch": null,
         "notes": "A genus denoting a hybrid or cross",
-        "otherNames": [],
+        "otherNames": [
+                        "generic hybrid"
+        ],
         "rank": "nothogenus",
         "rankGroup": "genus",
         "rankID": 6001
@@ -465,7 +484,9 @@
         "branch": null,
         "notes": "A named collection of closely related species",
         "otherNames": [
-            "aggregate species"
+            "aggregate species",
+            "functional group",
+            "species aggregate"
         ],
         "rank": "species group",
         "rankGroup": "species",
@@ -498,7 +519,9 @@
     {
         "branch": null,
         "notes": "A hybrid formed by directly crossing two species",
-        "otherNames": [],
+        "otherNames": [
+                        "species hybrid"
+        ],
         "rank": "nothospecies",
         "rankGroup": "species",
         "rankID": 7001
@@ -601,7 +624,8 @@
         "branch": null,
         "notes": "A hybrid formed by directly crossing two forms",
         "otherNames": [
-            "nothoforma"
+            "nothoforma",
+            "form hybrid"
         ],
         "rank": "nothoform",
         "rankGroup": "subspecies",
@@ -700,7 +724,9 @@
     {
         "branch": null,
         "notes": "A parasite adapted to a specific host",
-        "otherNames": [],
+        "otherNames": [
+                    "forma specialis"
+        ],
         "rank": "formaspecialis",
         "rankGroup": "subspecies",
         "rankID": 8140
@@ -720,6 +746,14 @@
         "rank": "breed",
         "rankGroup": "subspecies",
         "rankID": 8150
+    },
+    {
+        "branch": null,
+        "notes": null,
+        "otherNames": [],
+        "rank": "microgene",
+        "rankGroup": "subspecies",
+        "rankID": 8200
     },
     {
         "branch": null,
