@@ -119,6 +119,14 @@
     {
         "branch": null,
         "notes": null,
+        "otherNames": [],
+        "rank": "subterclass",
+        "rankGroup": "class",
+        "rankID": 3205
+    },
+    {
+        "branch": null,
+        "notes": null,
         "otherNames": [
             "infraclassis"
         ],
@@ -235,6 +243,14 @@
         "rank": "parvorder",
         "rankGroup": "order",
         "rankID": 4400
+    },
+    {
+        "branch": null,
+        "notes": null,
+        "otherNames": [],
+        "rank": "ordinal aggregate",
+        "rankGroup": "order",
+        "rankID": 4410
     },
     {
         "branch": "zoology",
@@ -528,6 +544,22 @@
     },
     {
         "branch": null,
+        "notes": null,
+        "otherNames": [],
+        "rank": "species pro parte",
+        "rankGroup": "species",
+        "rankID": 7010
+    },
+    {
+        "branch": null,
+        "notes": null,
+        "otherNames": [],
+        "rank": "species sensu lato",
+        "rankGroup": "species",
+        "rankID": 7020
+    },
+    {
+        "branch": null,
         "notes": "The whole of a fungus, including anamorph and teleomorph phases",
         "otherNames": [],
         "rank": "holomorph",
@@ -575,6 +607,38 @@
         "rankID": 8005
     },
     {
+        "branch": "zoology",
+        "notes": null,
+        "otherNames": [],
+        "rank": "praespecies",
+        "rankGroup": "subspecies",
+        "rankID": 8006
+    },
+    {
+        "branch": "zoology",
+        "notes": null,
+        "otherNames": [],
+        "rank": "sublusus",
+        "rankGroup": "subspecies",
+        "rankID": 8007
+    },
+    {
+        "branch": "zoology",
+        "notes": null,
+        "otherNames": [],
+        "rank": "subspecies aggregate",
+        "rankGroup": "subspecies",
+        "rankID": 8008
+    },
+    {
+        "branch": "zoology",
+        "notes": null,
+        "otherNames": [],
+        "rank": "subspecies hybrid",
+        "rankGroup": "subspecies",
+        "rankID": 8009
+    },
+    {
         "branch": null,
         "notes": null,
         "otherNames": [
@@ -588,7 +652,8 @@
         "branch": null,
         "notes": "A hybrid formed by directly crossing two varieties",
         "otherNames": [
-            "nothovarietas"
+            "nothovarietas",
+            "varietal hybrid"
         ],
         "rank": "nothovariety",
         "rankGroup": "subspecies",
