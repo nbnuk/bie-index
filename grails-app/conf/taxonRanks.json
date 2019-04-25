@@ -82,7 +82,7 @@
             "subdivision (botany)",
             "subphylum"
         ],
-        "rank": "subplylum",
+        "rank": "subphylum",
         "rankGroup": "phylum",
         "rankID": 2200
     },
@@ -335,7 +335,7 @@
         "rankID": 4470
     },
     {
-        "branch": "zooology",
+        "branch": "",
         "notes": null,
         "otherNames": [],
         "rank": "section",
@@ -353,7 +353,7 @@
         "rankID": 4475
     },
     {
-        "branch": "zoology",
+        "branch": "",
         "notes": null,
         "otherNames": [],
         "rank": "subsection",
