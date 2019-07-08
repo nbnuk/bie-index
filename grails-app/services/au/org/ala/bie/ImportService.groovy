@@ -236,12 +236,17 @@ class ImportService {
 
     def importRegions() {
         log "Starting regions import"
+        String[] regionFeaturedIds
+        if(grailsApplication.config.regionFeaturedLayerIds) {
+            regionFeaturedIds = grailsApplication.config.regionFeaturedLayerIds.split(',')
+            log("Featured regions = " + regionFeaturedIds.toString())
+        }
         def js = new JsonSlurper()
         def layers = js.parseText(new URL(Encoder.encodeUrl(grailsApplication.config.layersServicesUrl + "/layers")).getText("UTF-8"))
         indexService.deleteFromIndex(IndexDocType.REGION)
         layers.each { layer ->
-            if (layer.type == "Contextual") {
-                importLayer(layer)
+            if (layer.type == "Contextual" && layer.enabled.toBoolean()) {
+                importLayer(layer, regionFeaturedIds.contains(layer.id.toString()))
             }
         }
         log"Finished indexing ${layers.size()} region layers"
@@ -255,8 +260,9 @@ class ImportService {
      * @param layer
      * @return
      */
-    private def importLayer(layer) {
-        log("Loading regions from layer " + layer.name)
+    private def importLayer(layer, isFeaturedRegion = false) {
+        log("Loading regions from layer " + layer.name + " (" + layer.id + ")")
+        if (isFeaturedRegion) log("-- layer " + layer.name + " is also a featured region")
         def keywords = []
 
         if (grailsApplication.config.localityKeywordsUrl) {
@@ -269,6 +275,40 @@ class ImportService {
         file << new URL(Encoder.encodeUrl(url)).openStream()
         file.flush()
         file.close()
+
+        def featuredDynamicFields = [:]
+
+        if (isFeaturedRegion) {
+            if (grailsApplication.config.regionFeaturedLayerFields) {
+                //get additional dynamic fields to store
+                def workspaceLayer = "ALA:" + layer.name
+                def idField = 'ALA:' + grailsApplication.config.regionFeaturedLayerIDfield
+                def urlAttribs = grailsApplication.config.geoserverUrl + "/wfs?request=GetFeature&version=1.0.0&service=wfs&typeName=" + workspaceLayer + "&propertyname=" + grailsApplication.config.regionFeaturedLayerFields
+                def tempFileAttribsPath = "/tmp/attribs_${layer.id}.xml"
+                def fileAttribs = new File(tempFileAttribsPath).newOutputStream()
+                fileAttribs << new URL(Encoder.encodeUrl(urlAttribs)).openStream()
+                fileAttribs.flush()
+                fileAttribs.close()
+                if (new File(tempFileAttribsPath).exists() && new File(tempFileAttribsPath).length() > 0) {
+                    def xmlDoc = new XmlParser().parse(tempFileAttribsPath)
+                    for (fm in xmlDoc.'gml:featureMember') {
+                        def idValue = fm.("ALA:" + layer.name).(idField.toString()).text()
+                        def faMap = [:]
+                        for (fa in fm.(workspaceLayer.toString())[0].children()) {
+                            def attrName = fa.name().localPart
+                            def attrVal = fa.text()
+                            faMap.put(attrName, attrVal)
+                        }
+                        featuredDynamicFields.put(idValue, faMap)
+                    }
+
+                        //xmlDoc.value()[1]
+                        //xmlDoc.'gml:featureMember'[0].'ALA:London'.'ALA:gid'.text()
+
+
+                }
+            }
+        }
 
         if (new File(tempFilePath).exists() && new File(tempFilePath).length() > 0) {
 
@@ -316,6 +356,21 @@ class ImportService {
                     }
 
                     batch << doc
+
+                    if (isFeaturedRegion) {
+                        def doc2 = doc.findAll {it.key != "idxtype"}
+                        doc2["idxtype"] = IndexDocType.REGIONFEATURED.name()
+                        def shp_idValue = currentLine[1]
+                        if (featuredDynamicFields.containsKey(shp_idValue)) {
+                            //find shp_idfield in xml FIELDSSID (="BBG_UNIQUE" for our example)
+                            def shpAttrs = featuredDynamicFields.get(shp_idValue)
+                            for (attr in shpAttrs.keySet()) {
+                                //add attr key to doc2[] with value attr.value
+                                doc2[attr + '_s'] = shpAttrs.get(attr)
+                            }
+                        }
+                        batch << doc2
+                    }
 
                     if (batch.size() > 10000) {
                         indexService.indexBatch(batch)
@@ -1406,6 +1461,7 @@ class ImportService {
         def nameFormatted = record.value(ALATerm.nameFormatted)
         def taxonRankID = taxonRanks.get(taxonRank) ? taxonRanks.get(taxonRank).rankID : -1
         def taxonomicStatus = record.value(DwcTerm.taxonomicStatus) ?: defaultTaxonomicStatus
+        def nomenclaturalStatus = record.value(DwcTerm.nomenclaturalStatus)
 
         doc["datasetID"] = datasetID
         doc["parentGuid"] = parentNameUsageID
@@ -1416,9 +1472,12 @@ class ImportService {
         }
         doc["scientificName"] = scientificName
         doc["scientificNameAuthorship"] = scientificNameAuthorship
-        doc["nameComplete"] = buildNameComplete(nameComplete, scientificName, scientificNameAuthorship)
-        doc["nameFormatted"] = buildNameFormatted(nameFormatted, nameComplete, scientificName, scientificNameAuthorship, taxonRank, taxonRanks)
+        doc["nameComplete"] = buildNameComplete(nameComplete, scientificName, scientificNameAuthorship, nomenclaturalStatus)
+        doc["nameFormatted"] = buildNameFormatted(nameFormatted, nameComplete, scientificName, scientificNameAuthorship, taxonRank, taxonRanks, nomenclaturalStatus)
         doc["taxonomicStatus"] = taxonomicStatus
+
+        //RR *** force commonNameSingle not to mapped to dynamic_field?
+        //RR *** or preferably figure out priority for pushing a name to the top -> commonNameSingle
 
         //index additional fields that are supplied in the record
         record.terms().each { term ->
@@ -2178,11 +2237,16 @@ class ImportService {
      * @param scientificNameAuthorship The authorship
      * @return
      */
-    String buildNameComplete(String nameComplete, String scientificName, String scientificNameAuthorship) {
+    String buildNameComplete(String nameComplete, String scientificName, String scientificNameAuthorship, String nomenclaturalStatus = "") {
         if (nameComplete)
             return nameComplete
-        if (scientificNameAuthorship)
+        if (scientificNameAuthorship) {
+            if (nomenclaturalStatus)
+                return scientificName + " " + scientificNameAuthorship + " " + nomenclaturalStatus
             return scientificName + " " + scientificNameAuthorship
+        }
+        if (nomenclaturalStatus)
+            return scientificName + " " + nomenclaturalStatus
         return scientificName
     }
 
@@ -2203,7 +2267,7 @@ class ImportService {
      *
      * @return The formatted name
      */
-    String buildNameFormatted(String nameFormatted, String nameComplete, String scientificName, String scientificNameAuthorship, String rank, Map rankMap) {
+    String buildNameFormatted(String nameFormatted, String nameComplete, String scientificName, String scientificNameAuthorship, String rank, Map rankMap, String nomenclaturalStatus = "") {
         def rankGroup = rankMap.get(rank)?.rankGroup ?: "unknown"
         def formattedCssClass = rank ? "scientific-name rank-${rankGroup}" : "scientific-name";
 
@@ -2224,8 +2288,14 @@ class ImportService {
             name = name + "</span>"
             return name
         }
-        if (scientificNameAuthorship)
+        if (scientificNameAuthorship) {
+            //nomenclaturalStatus added to author span, since not clear that it should have its own
+            if (nomenclaturalStatus)
+                return "<span class=\"${formattedCssClass}\"><span class=\"name\">${StringEscapeUtils.escapeHtml(scientificName)}</span> <span class=\"author\">${StringEscapeUtils.escapeHtml(scientificNameAuthorship) + ' ' + StringEscapeUtils.escapeHtml(nomenclaturalStatus)}</span></span>"
             return "<span class=\"${formattedCssClass}\"><span class=\"name\">${StringEscapeUtils.escapeHtml(scientificName)}</span> <span class=\"author\">${StringEscapeUtils.escapeHtml(scientificNameAuthorship)}</span></span>"
+        }
+        if (nomenclaturalStatus)
+            return "<span class=\"${formattedCssClass}\"><span class=\"name\">${StringEscapeUtils.escapeHtml(scientificName)}</span> <span class=\"author\">${StringEscapeUtils.escapeHtml(nomenclaturalStatus)}</span></span>"
         return "<span class=\"${formattedCssClass}\"><span class=\"name\">${StringEscapeUtils.escapeHtml(scientificName)}</span></span>"
     }
 

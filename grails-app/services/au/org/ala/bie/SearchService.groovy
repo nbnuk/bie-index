@@ -823,10 +823,12 @@ class SearchService {
         def clists_fieldVal = clists.findAll{ it.sourceField != '*' } /* exclude simple list-membership entries */
 
         def conservationStatus = clists_fieldVal.inject([:], { ac, cl ->
-            final cs = taxon[cl.field]
-            if (cs)
-                ac.put(cl.label, [dr: cl.uid, status: cs])
-            ac
+            if (cl.label > "") { //exclude entries where label is empty
+                final cs = taxon[cl.field]
+                if (cs)
+                    ac.put(cl.label, [dr: cl.uid, status: cs])
+                ac
+            }
         })
 
         def model = [
@@ -1150,6 +1152,29 @@ class SearchService {
                         "infoSourceName" : it.datasetName,
                         "infoSourceURL" : "${grailsApplication.config.collectoryBaseUrl}/public/show/${it.datasetID}"
                 ]
+            } else if (it.idxtype == IndexDocType.REGIONFEATURED.name()){
+                doc = [
+                        id            : it.id,
+                        guid          : it.guid,
+                        linkIdentifier: it.linkIdentifier,
+                        idxtype       : it.idxtype,
+                        name          : it.name,
+                        description   : it.description
+                ]
+                if (it.taxonGuid) {
+                    doc.put("taxonGuid", it.taxonGuid)
+                }
+                if (it.centroid) {
+                    doc.put("centroid", it.centroid)
+                }
+                def fieldsRF = grailsApplication.config.regionFeaturedLayerFields.split(",").findAll { !it.isEmpty() }
+                if (fieldsRF) {
+                    fieldsRF.each { field ->
+                        if (it."${field}_s") {
+                            doc.put(field+"_s", it."${field}_s")
+                        }
+                    }
+                }
             } else {
                 doc = [
                         id            : it.id,
