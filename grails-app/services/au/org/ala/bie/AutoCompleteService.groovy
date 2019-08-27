@@ -55,14 +55,26 @@ class AutoCompleteService {
 
         log.debug "autocomplete query = ${query}"
 
-        String queryUrl = grailsApplication.config.indexLiveBaseUrl + "/suggest?" + query.join('&')
+        String queryUrl
+        if (otherParams[0]?.contains("REGIONFEATURED")) {
+            queryUrl = grailsApplication.config.indexLiveBaseUrl + "/suggest_region_featured?" + query.join('&')
+        } else {
+            queryUrl = grailsApplication.config.indexLiveBaseUrl + "/suggest?" + query.join('&')
+        }
         log.debug "queryUrl = |${queryUrl}|"
         def queryResponse = new URL(Encoder.encodeUrl(queryUrl)).getText("UTF-8")
         def js = new JsonSlurper()
         def json = js.parseText(queryResponse)
 
-        json.grouped.scientificName_s.groups.each { group ->
-            autoCompleteList << createAutoCompleteFromIndex(group.doclist.docs[0], q)
+
+        if (otherParams[0]?.contains("REGIONFEATURED")) {
+            json.grouped.bbg_name_s.groups.each { group ->
+                autoCompleteList << createRegionFeaturedAutoCompleteFromIndex(group.doclist.docs[0], q)
+            }
+        } else {
+            json.grouped.scientificName_s.groups.each { group ->
+                autoCompleteList << createAutoCompleteFromIndex(group.doclist.docs[0], q)
+            }
         }
         log.debug("results: " + autoCompleteList.size())
         autoCompleteList
@@ -70,6 +82,7 @@ class AutoCompleteService {
 
     /**
      * Legacy Autocomplete service. This uses the normal /select service.
+     * NOTE: region featured search not implemented here yet
      *
      * @param q
      * @param otherParams
@@ -174,6 +187,53 @@ class AutoCompleteService {
 
         if (scientificNames) {
             matchedNames.addAll(getHighlightedNames(scientificNames, value, "", ""));
+        } else if (doc.doc_name) {
+            matchedNames.addAll(getHighlightedNames(doc.doc_name, value, "", ""));
+        }
+
+
+        if(!matchedNames){
+            matchedNames << autoDto.name
+        }
+
+        autoDto.matchedNames = matchedNames
+
+        autoDto
+    }
+
+    /**
+     * Creates an auto complete DTO from the supplied result for featured regions.
+     * @param qr
+     * @param doc
+     * @param value
+     * @return
+     */
+    private def createRegionFeaturedAutoCompleteFromIndex(Map doc, String value){
+        log.debug "doc = ${doc as JSON}"
+        def autoDto = new AutoCompleteDTO();
+        autoDto.guid = doc.guid
+        autoDto.name = doc.bbg_name_s
+
+        List<String> matchedNames = [] // temp list to stored matched names
+
+        String[] name1 = new String[0];
+        Object o = doc.get("bbg_name_s");
+        if(o != null){
+            name1 = (String)o
+        }
+
+        ArrayList<String> regionNames = new ArrayList<String>();
+        regionNames.add(name1);
+
+
+        String nc = doc.get("bbg_name_s")
+        if (nc != null) {
+            regionNames.add(nc);
+            autoDto.setRegionFeaturedMatches(getHighlightedNames([nc], value, "<b>", "</b>"));
+        }
+
+        if (regionNames) {
+            matchedNames.addAll(getHighlightedNames(regionNames, value, "", ""));
         } else if (doc.doc_name) {
             matchedNames.addAll(getHighlightedNames(doc.doc_name, value, "", ""));
         }

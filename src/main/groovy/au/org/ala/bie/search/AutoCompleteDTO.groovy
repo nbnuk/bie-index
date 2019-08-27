@@ -10,6 +10,7 @@ class AutoCompleteDTO {
     Integer georeferencedCount = 0
     List scientificNameMatches = []
     List commonNameMatches = []
+    List regionFeaturedMatches = []
     String commonName
     List matchedNames = []
     Integer rankID =  -1
