@@ -23,7 +23,7 @@ apply plugin:"asset-pipeline"
 
 apply from: 'https://raw.githubusercontent.com/AtlasOfLivingAustralia/travis-build-configuration/master/travis_grails_publish.gradle'
 
-boolean inplace = true
+boolean inplace = false
 if (inplace) {
     grails {
         exploded = true
@@ -82,7 +82,7 @@ dependencies {
     compile "org.jsoup:jsoup:1.8.3"
     compile 'org.grails.plugins:external-config:1.1.1'
 
-    //compile group: 'org.grails.plugins', name: 'ala-bootstrap3', version: '3.0.3', changing: true
+    compile group: 'org.grails.plugins', name: 'ala-bootstrap3', version: '3.0.3', changing: true
     compile(group: 'org.grails.plugins', name: 'ala-auth', version:'3.0.4', changing: true) { /* RR was 3.1.0-SNAPSHOT;  */
         exclude group: 'javax.servlet', module: 'servlet-api'
     }
