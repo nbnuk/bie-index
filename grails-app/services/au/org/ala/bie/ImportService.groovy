@@ -1268,12 +1268,21 @@ class ImportService {
                 doc['speciesSubgroup'] = []
             }
             buildTaxonRecord(core, doc, attributionMap, datasetMap, taxonRanks, defaultTaxonomicStatus, defaultDatasetName)
-
+            doc['distribution'] = []
+            doc['habitat_m_s'] = []
             if (record.hasExtension(GbifTerm.Distribution)) {
                 record.extension(GbifTerm.Distribution).each {
                     def distribution = it.value(DwcTerm.stateProvince)
                     if (distribution)
-                        doc["distribution"] = distribution
+                        doc["distribution"] <<  distribution
+                }
+            }
+
+            if (record.hasExtension(GbifTerm.SpeciesProfile)) {
+                record.extension(GbifTerm.SpeciesProfile).each {
+                    def habitat = it.value(DwcTerm.habitat)
+                    if (habitat)
+                        doc["habitat_m_s"] << habitat
                 }
             }
 

@@ -47,6 +47,8 @@ class ImportController {
 
     def localities(){}
 
+    def habitats(){}
+
     def specieslist(){}
 
     def wordpress(){}
