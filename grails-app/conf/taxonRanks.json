@@ -849,8 +849,8 @@
     {
         "branch": null,
         "notes": "A chromosome abnormality",
-        "otherNames": [],
-        "rank": "abberation",
+        "otherNames": ["abberation"],
+        "rank": "aberration",
         "rankGroup": "subspecies",
         "rankID": 8100
     },
