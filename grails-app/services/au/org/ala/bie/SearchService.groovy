@@ -175,7 +175,11 @@ class SearchService {
         query << "rows=${params.rows ?: params.pageSize ?: 10}"
 
         if (params.sort) {
-            query << "sort=${params.sort} ${params.dir ?: 'asc'}" // sort dir example "&sort=name asc"
+            if (params.sort2) {
+                query << "sort=${params.sort} ${params.dir ?: 'asc'}, ${params.sort2} ${params.dir2 ?: 'asc'}" //e.g. sort=rankId asc,scientificName asc
+            } else {
+                query << "sort=${params.sort} ${params.dir ?: 'asc'}" // sort dir example "&sort=name asc"
+            }
         }
 
         grailsApplication.config.solr.fq.each { query << "&fq=${it}"}
@@ -186,6 +190,8 @@ class SearchService {
                 query << "&fq=${fqs}"
             }
         }
+
+        query << "fl=*,score" //add score field
 
         String solrUlr = grailsApplication.config.indexLiveBaseUrl + "/select?" + query.join('&')
         log.info "SOLR URL = ${solrUlr}"
