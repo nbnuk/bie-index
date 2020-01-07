@@ -512,6 +512,27 @@ class SearchService {
     }
 
     /**
+     * Retrieve details of synonyms for a taxonID
+     *
+     * @param taxonID The taxon identifier
+     * @param useOfflineIndex
+     * @return
+     */
+    def lookupSynonyms(String taxonID, Boolean useOfflineIndex = false){
+        def indexServerUrlPrefix = useOfflineIndex ? grailsApplication.config.indexOfflineBaseUrl : grailsApplication.config.indexLiveBaseUrl
+        def encID = URLEncoder.encode(taxonID, 'UTF-8')
+
+        def synonymQueryUrl = indexServerUrlPrefix + "/select?wt=json&q=" +
+                "acceptedConceptID:\"" + taxonID + "\"" + "&fq=idxtype:" + IndexDocType.TAXON.name() +
+                "&sort=nameComplete+ASC&rows=200"
+
+        def queryResponse = new URL(synonymQueryUrl).getText("UTF-8")
+        def js = new JsonSlurper()
+        def json = js.parseText(queryResponse)
+        json.response.docs
+    }
+
+    /**
      * Retrieve details of a specific identifier by taxonID
      *
      * @param taxonID The taxon identifier
@@ -540,7 +561,7 @@ class SearchService {
     def lookupVernacular(String taxonID, Boolean useOfflineIndex = false){
         def indexServerUrlPrefix = useOfflineIndex ? grailsApplication.config.indexOfflineBaseUrl : grailsApplication.config.indexLiveBaseUrl
         def encID = UriUtils.encodeQueryParam(taxonID, 'UTF-8')
-        def indexServerUrl = indexServerUrlPrefix+ "/select?wt=json&q=taxonGuid:%22${encID}%22&fq=idxtype:${IndexDocType.COMMON.name()}"
+        def indexServerUrl = indexServerUrlPrefix+ "/select?wt=json&q=taxonGuid:%22${encID}%22&fq=idxtype:${IndexDocType.COMMON.name()}&rows=100" //need to specify enough rows to prevent paging
         def queryResponse = new URL(indexServerUrl).getText("UTF-8")
         def js = new JsonSlurper()
         def json = js.parseText(queryResponse)
@@ -787,7 +808,7 @@ class SearchService {
 
         //retrieve any synonyms
         def synonymQueryUrl = grailsApplication.config.indexLiveBaseUrl + "/select?wt=json&q=" +
-                "acceptedConceptID:\"" + taxon.guid + "\"" + "&fq=idxtype:" + IndexDocType.TAXON.name()
+                "acceptedConceptID:\"" + taxon.guid + "\"" + "&fq=idxtype:" + IndexDocType.TAXON.name() + "&rows=200&sort=nameComplete+ASC"
         def synonymQueryResponse = new URL(Encoder.encodeUrl(synonymQueryUrl)).getText("UTF-8")
         def js = new JsonSlurper()
         def synJson = js.parseText(synonymQueryResponse)
@@ -1080,7 +1101,7 @@ class SearchService {
                 if (it.commonNameSingle)
                     commonNameSingle = it.commonNameSingle
                 if (it.commonName) {
-                    commonNames = it.commonName.join(", ")
+                    commonNames = it.commonName.sort{it.capitalize()}.join(", ")
                     if (commonNameSingle.isEmpty())
                         commonNameSingle = it.commonName.first()
                 }

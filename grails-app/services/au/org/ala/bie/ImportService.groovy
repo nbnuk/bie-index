@@ -1333,8 +1333,8 @@ class ImportService {
             String organismPart = record.value(GbifTerm.organismPart)
             String taxonRemarks = record.value(DwcTerm.taxonRemarks)
             String labels = record.value(ALATerm.labels)
-            def capitaliser = TitleCapitaliser.create(language ?: defaultLanguage)
-            vernacularName = capitaliser.capitalise(vernacularName)
+            //def capitaliser = TitleCapitaliser.create(language ?: defaultLanguage)
+            //vernacularName = capitaliser.capitalise(vernacularName) //do not change provided capitalisation
             def doc = [:]
             doc["id"] = UUID.randomUUID().toString() // doc key
             doc["idxtype"] = IndexDocType.COMMON // required field
@@ -2131,9 +2131,21 @@ class ImportService {
             if(commonNames) {
                 update["commonName"] = [set: names]
                 update["commonNameExact"] = [set: names]
-                update["commonNameSingle"] = [set: names.first() ] /* RR rather get preferred name - it should have higher priority *** TODO */
+                update["commonNameSingle"] = [set: names.first() ] /* first should have highest priority */
             }
         }
+
+        def synonyms = searchService.lookupSynonyms(guid, !online)
+        if (synonyms && !synonyms.isEmpty()) {
+
+            def names = new LinkedHashSet(synonyms.collect { it.scientificName })
+            def namesComplete = new LinkedHashSet(synonyms.collect { it.nameComplete })
+            if(synonyms) {
+                update["synonym"] = [set: names]
+                update["synonymComplete"] = [set: namesComplete]
+            }
+        }
+
         def identifiers = searchService.lookupIdentifier(guid, !online)
         if (identifiers) {
             update["additionalIdentifiers"] = [set: identifiers.collect { it.guid }]
