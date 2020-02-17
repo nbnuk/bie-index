@@ -26,7 +26,7 @@
 </head>
 <body>
 <div>
-    <h2 class="heading-medium"><g:message code="admin.import.layers.label"/></h2>
+    <h2 class="heading-medium"><g:message code="admin.import.links.label"/></h2>
 
     <div class="row">
         <p class="col-md-8 lead"><g:message code="admin.import.links.lead"/></p>

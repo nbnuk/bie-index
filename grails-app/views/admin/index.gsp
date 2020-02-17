@@ -19,6 +19,7 @@
         <li><g:link controller="import" action="wordpress"><g:message code="admin.import.wordpress.label"/></g:link> <g:message code="admin.import.wordpress.lead"/></li>
         <li><g:link controller="import" action="links"><g:message code="admin.import.links.label"/></g:link> <g:message code="admin.import.links.lead"/></li>
         <li><g:link controller="import" action="occurrences"><g:message code="admin.import.occurrences.label"/></g:link> <g:message code="admin.import.occurrences.lead"/></li>
+        <li><g:link controller="import" action="occurrencesplaces"><g:message code="admin.import.occurrencesplaces.label"/></g:link> <g:message code="admin.import.occurrencesplaces.lead"/></li>
         <br>
         <li><g:link controller="job" action="index"><g:message code="admin.job.label"/></g:link> <g:message code="admin.job.lead"/></li>
         %{-- <li><g:link controller="alaAdmin" action="index"><g:message code="admin.ala.label"/></g:link> <g:message code="admin.ala.lead"/></li> --}%

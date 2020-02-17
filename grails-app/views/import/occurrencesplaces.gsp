@@ -14,26 +14,26 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <html>
 <head>
-  <title><g:message code="admin.import.occurrences.label"/></title>
-  <meta name="layout" content="${grailsApplication.config.skin.layout}"/>
+    <title><g:message code="admin.import.occurrencesplaces.label"/></title>
+    <meta name="layout" content="${grailsApplication.config.skin.layout}"/>
     <meta name="breadcrumbParent" content="${createLink(controller:'admin', action:'index', absolute:true)},${message(code: 'breadcrumb.admin')}"/>
     <asset:javascript src="sockets"/>
     <style type="text/css">
-        .progress {
-            height: 10px !important;
-        }
-        #import-info-web-socket {
-            height: 400px;
-            overflow-y: scroll;
-        }
+    .progress {
+        height: 10px !important;
+    }
+    #import-info-web-socket {
+        height: 400px;
+        overflow-y: scroll;
+    }
     </style>
 </head>
 <body>
 <div>
-    <h2 class="heading-medium"><g:message code="admin.import.occurrences.label"/></h2>
+    <h2 class="heading-medium"><g:message code="admin.import.occurrencesplaces.label"/></h2>
 
     <div class="row">
-        <p class="col-md-8 lead"><g:message code="admin.import.occurrences.lead"/></p>
+        <p class="col-md-8 lead"><g:message code="admin.import.occurrencesplaces.lead"/></p>
         <p class="col-md-4 well"><g:message code="admin.import.swap"/></p>
     </div>
 
@@ -43,13 +43,13 @@
     <div>
         <input type="checkbox" id="use-online" name="use-online"/> <g:message code="admin.label.useonline"/>
     </div>
-    <g:render template="status" model="${[showTitle: true, showJob: true, showLog: true, startLog: false]}"/>
 
-    <asset:script type="text/javascript">
-        function loadOccCounts(){
-            loadInfo("${createLink(controller:'import', action:'importOccurrences')}?online=" + $('#use-online').is(':checked'));
+    <g:render template="status" model="${[showTitle: true, showJob: true, showLog: true, startLog: false]}"/>
+<asset:script type="text/javascript">
+    function loadOccCounts(){
+        loadInfo("${createLink(controller:'import', action:'importOccurrencesPlaces')}?online=" + $('#use-online').is(':checked'));
     }
-    </asset:script>
+</asset:script>
 </div>
 </body>
 </html>

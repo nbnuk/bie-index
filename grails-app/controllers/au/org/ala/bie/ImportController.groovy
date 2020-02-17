@@ -57,6 +57,8 @@ class ImportController {
 
     def occurrences(){}
 
+    def occurrencesplaces(){}
+
     /**
      * Import a DwC-A into this system.
      *
@@ -83,7 +85,7 @@ class ImportController {
     def importAll(){
         def job = execute(
                 "importDwca,importCollectory,deleteDanglingSynonyms,importLayers,importLocalities,importRegions,importHabitats,importHabitats," +
-                    "importWordPressPages,importOccurrences,importConsevationSpeciesLists,buildVernacularSpeciesLists,buildLinkIdentifiers" +
+                    "importWordPressPages,importOccurrences,importOccurrencesPlaces,importConsevationSpeciesLists,buildVernacularSpeciesLists,buildLinkIdentifiers" +
                     "denormaliseTaxa,loadImages,",
                 "admin.button.importall",
                 { importService.importAll() })
@@ -191,7 +193,20 @@ class ImportController {
      * @return
      */
     def importOccurrences(){
-        def job = execute("importOccurrences", "admin.button.loadoccurrence", { importService.importOccurrenceData() })
+        def online = BooleanUtils.toBooleanObject(params.online ?: "false")
+        def job = execute("importOccurrences", "admin.button.loadoccurrence", { importService.importOccurrenceData(online, false) })
+        asJson (job.status())
+
+    }
+
+    /**
+     * Index place occurrence data
+     *
+     * @return
+     */
+    def importOccurrencesPlaces(){
+        def online = BooleanUtils.toBooleanObject(params.online ?: "false")
+        def job = execute("importOccurrencesPlaces", "admin.button.loadoccurrenceplaces", { importService.importOccurrenceData(online, true) })
         asJson (job.status())
 
     }

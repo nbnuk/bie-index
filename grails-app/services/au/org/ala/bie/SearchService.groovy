@@ -1181,12 +1181,13 @@ class SearchService {
                 ]
             } else if (it.idxtype == IndexDocType.REGIONFEATURED.name()){
                 doc = [
-                        id            : it.id,
-                        guid          : it.guid,
-                        linkIdentifier: it.linkIdentifier,
-                        idxtype       : it.idxtype,
-                        name          : it.name,
-                        description   : it.description
+                        id              : it.id,
+                        guid            : it.guid,
+                        linkIdentifier  : it.linkIdentifier,
+                        idxtype         : it.idxtype,
+                        name            : it.name,
+                        description     : it.description,
+                        occurrenceCount : it.occurrenceCount
                 ]
                 if (it.taxonGuid) {
                     doc.put("taxonGuid", it.taxonGuid)
