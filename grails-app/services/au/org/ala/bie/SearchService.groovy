@@ -168,6 +168,9 @@ class SearchService {
 
         if (requestedFacets) {
             requestedFacets.each { query << "facet.field=${it}" }
+            if (params.flimit?:'') {
+                query << "facet.limit=" + params.flimit
+            }
         }
 
         //pagination params
@@ -1089,7 +1092,7 @@ class SearchService {
 
         // add occurrence counts
         if(grailsApplication.config.occurrenceCounts.enabled.asBoolean()){
-            docs = populateOccurrenceCounts(docs, params)
+            docs = populateOccurrenceCounts(docs, params) //TODO: this should no longer be needed since occurrenceCount value is kept up-to-date
         }
 
         docs.each {
@@ -1194,6 +1197,15 @@ class SearchService {
                 }
                 if (it.centroid) {
                     doc.put("centroid", it.centroid)
+                }
+                if (it.'point-0.0001') {
+                    doc.put("point-0.0001", it.'point-0.0001')
+                }
+                if (it.longitude) {
+                    doc.put("longitude", it.longitude)
+                }
+                if (it.latitude) {
+                    doc.put("latitude", it.latitude)
                 }
                 def fieldsRF = grailsApplication.config.regionFeaturedLayerFields.split(",").findAll { !it.isEmpty() }
                 if (fieldsRF) {

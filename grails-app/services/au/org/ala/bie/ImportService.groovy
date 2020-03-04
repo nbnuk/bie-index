@@ -372,6 +372,15 @@ class ImportService {
                                 //add attr key to doc2[] with value attr.value
                                 doc2[attr + '_s'] = shpAttrs.get(attr)
                             }
+                            def centroid = doc['centroid']?:'' //centroid will be something like POINT(-2.24837969557765 53.5201084106602)
+                            if (centroid) {
+                                def vals = centroid.findAll( /-?\d+\.\d*|-?\d*\.\d+|-?\d+/ )*.toDouble()
+                                if (vals.size() == 2) {
+                                    doc2['longitude'] = vals[0]
+                                    doc2['latitude'] = vals[1]
+                                    doc2['point-0.0001'] = vals[1].round(4).toString() + ',' + vals[0].round(4).toString()
+                                }
+                            }
                         }
                         batch << doc2
                     }
