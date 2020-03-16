@@ -140,7 +140,12 @@ class SearchService {
                 }
                 def nq = queryArray.join(" ")
                 log.debug "fuzzy nq = ${nq}"
-                q = "\"${q}\"^100 ${nq}"
+                if ((params?.q_op?: '') != '') {
+                    query << "q.op=${params.q_op}"
+                    //leave q unweighted
+                } else {
+                    q = "\"${q}\"^100 ${nq}"
+                }
             }
         } else {
             q = "*:*"
