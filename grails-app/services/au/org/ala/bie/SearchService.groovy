@@ -1147,6 +1147,12 @@ class SearchService {
                     doc.put("guid", it.acceptedConceptID)
                     doc.put("linkIdentifier", null)  // Otherwise points to the synonym
                 }
+                ImportService.ADDITIONAL_OCC_STATS.each { stats ->
+                    if (it.containsKey(stats.key)) {
+                        doc.put(stats.key, it[stats.key])
+                    }
+                }
+
 
                 if (it.image) {
                     doc.put("image", it.image)
