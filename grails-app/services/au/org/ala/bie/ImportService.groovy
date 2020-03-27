@@ -78,6 +78,14 @@ class ImportService {
             ALATerm.nameFormatted,
     ] as Set
 
+    static ADDITIONAL_OCC_STATS = [
+            'occurrenceEnglandCount': 'cl28:England',
+            'occurrenceScotlandCount': 'cl28:Scotland',
+            'occurrenceWalesCount': 'cl28:Wales',
+            'occurrenceIsleOfManCount' : 'cl28:"Isle of Man"',
+            'occurrenceNorthernIrelandCount': 'cl28:"Northern Ireland"',
+            'occurrenceWalesBufferCount': '(cl28:Wales OR cl104:"Wales 20km terrestrial buffer")'
+            ]
 
     def indexService, searchService
 
@@ -802,6 +810,10 @@ class ImportService {
                 clearFieldValues("occurrenceCount", "idxtype:REGIONFEATURED", online)
             } else {
                 clearFieldValues("occurrenceCount", "idxtype:TAXON", online)
+                ADDITIONAL_OCC_STATS.each {
+                    clearFieldValues(it.key, "idxtype:TAXON", online)
+                }
+
             }
         } catch (Exception ex) {
                 log.warn "Error clearing occurrenceCounts: ${ex.message}", ex
@@ -919,6 +931,11 @@ class ImportService {
                 if(doc.containsKey("occurrenceCount")){
                     updateDoc["occurrenceCount"] = ["set": doc["occurrenceCount"]]
                 }
+                ADDITIONAL_OCC_STATS.each {
+                    if(doc.containsKey(it.key)){
+                        updateDoc[it.key] = ["set": doc[it.key]]
+                    }
+                }
                 commitQueue.offer(updateDoc) // throw it on the queue
                 totalDocumentsUpdated++
             } else {
@@ -1033,6 +1050,27 @@ class ImportService {
                             }
                         }
                     }
+
+                    //only try stats if there were some records (and no other breaking errors)
+                    ADDITIONAL_OCC_STATS.each { stats ->
+                        def url_stats = url + "&fq=" + stats.value
+                        //log.info("url_stats = " + url_stats)
+                        def queryResponse_stats = new URL(Encoder.encodeUrl(url_stats)).getText("UTF-8")
+                        JSONObject jsonObj_stats = JSON.parse(queryResponse_stats)
+                        if (jsonObj_stats.containsKey("facet_counts")) {
+                            def facetCounts_stats = jsonObj_stats?.facet_counts?.facet_fields?.taxon_concept_lsid
+                            facetCounts_stats.eachWithIndex { val, idx ->
+                                // facets results are a list with key, value, key, value, etc
+                                if (idx % 2 == 0) {
+                                    def docWithRecs = docs.find { it.guid == val }
+                                    def statsField = stats.key
+                                    docWithRecs[statsField] = facetCounts_stats[idx + 1] //add the count
+                                    //no need to re-add to docsWithRecs since by-reference
+                                }
+                            }
+                        }
+                    }
+
                 }
             } catch (Exception ex) {
                 log.warn "Error calling biocache SOLR: ${ex.message}", ex
