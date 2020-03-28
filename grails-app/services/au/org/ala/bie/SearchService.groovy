@@ -1100,6 +1100,9 @@ class SearchService {
             docs = populateOccurrenceCounts(docs, params) //TODO: this should no longer be needed since occurrenceCount value is kept up-to-date
         }
 
+        def jsonSlurper = new JsonSlurper()
+        def AdditionalOccStats = jsonSlurper.parseText(grailsApplication.config?.additionalOccurrenceCountsJSON ?: "[]")
+
         docs.each {
             Map doc = null
             if (it.idxtype == IndexDocType.TAXON.name()) {
@@ -1147,9 +1150,10 @@ class SearchService {
                     doc.put("guid", it.acceptedConceptID)
                     doc.put("linkIdentifier", null)  // Otherwise points to the synonym
                 }
-                ImportService.ADDITIONAL_OCC_STATS.each { stats ->
-                    if (it.containsKey(stats.key)) {
-                        doc.put(stats.key, it[stats.key])
+
+                AdditionalOccStats.each { stats ->
+                    if (it.containsKey(stats.solrfield)) {
+                        doc.put(stats.solrfield, it[stats.solrfield])
                     }
                 }
 

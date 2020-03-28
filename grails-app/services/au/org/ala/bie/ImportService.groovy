@@ -77,16 +77,7 @@ class ImportService {
             ALATerm.nameComplete,
             ALATerm.nameFormatted,
     ] as Set
-
-    static ADDITIONAL_OCC_STATS = [
-            'occurrenceEnglandCount': 'cl28:England',
-            'occurrenceScotlandCount': 'cl28:Scotland',
-            'occurrenceWalesCount': 'cl28:Wales',
-            'occurrenceIsleOfManCount' : 'cl28:"Isle of Man"',
-            'occurrenceNorthernIrelandCount': 'cl28:"Northern Ireland"',
-            'occurrenceWalesBufferCount': '(cl28:Wales OR cl104:"Wales 20km terrestrial buffer")'
-            ]
-
+    
     def indexService, searchService
 
     def grailsApplication
@@ -810,8 +801,14 @@ class ImportService {
                 clearFieldValues("occurrenceCount", "idxtype:REGIONFEATURED", online)
             } else {
                 clearFieldValues("occurrenceCount", "idxtype:TAXON", online)
-                ADDITIONAL_OCC_STATS.each {
-                    clearFieldValues(it.key, "idxtype:TAXON", online)
+
+                if (grailsApplication.config?.additionalOccurrenceCountsJSON) {
+                    def jsonSlurper = new JsonSlurper()
+                    def AdditionalOccStats = jsonSlurper.parseText(grailsApplication.config?.additionalOccurrenceCountsJSON ?: "[]")
+                    AdditionalOccStats.each {
+                        log.info("it.solrfield = " + it.solrfield)
+                        clearFieldValues(it.solrfield, "idxtype:TAXON", online)
+                    }
                 }
 
             }
@@ -921,6 +918,12 @@ class ImportService {
     def updateTaxaWithLocationInfo(List docs, Queue commitQueue) {
         def totalDocumentsUpdated = 0
 
+        def AdditionalOccStats
+        if (grailsApplication.config?.additionalOccurrenceCountsJSON) {
+            def jsonSlurper = new JsonSlurper()
+            AdditionalOccStats = jsonSlurper.parseText(grailsApplication.config?.additionalOccurrenceCountsJSON ?: "[]")
+        }
+
         docs.each { Map doc ->
             if (doc.containsKey("id") && doc.containsKey("guid") && doc.containsKey("idxtype")) {
                 Map updateDoc = [:]
@@ -931,9 +934,11 @@ class ImportService {
                 if(doc.containsKey("occurrenceCount")){
                     updateDoc["occurrenceCount"] = ["set": doc["occurrenceCount"]]
                 }
-                ADDITIONAL_OCC_STATS.each {
-                    if(doc.containsKey(it.key)){
-                        updateDoc[it.key] = ["set": doc[it.key]]
+                if (grailsApplication.config?.additionalOccurrenceCountsJSON) {
+                    AdditionalOccStats.each {
+                        if (doc.containsKey(it.solrfield)) {
+                            updateDoc[it.solrfield] = ["set": doc[it.solrfield]]
+                        }
                     }
                 }
                 commitQueue.offer(updateDoc) // throw it on the queue
@@ -1020,6 +1025,12 @@ class ImportService {
         List docsWithRecs = [] // docs to index
         //log("Getting occurrence data for ${docs.size()} docs")
 
+        def AdditionalOccStats
+        if (grailsApplication.config?.additionalOccurrenceCountsJSON) {
+            def jsonSlurper = new JsonSlurper()
+            AdditionalOccStats = jsonSlurper.parseText(grailsApplication.config?.additionalOccurrenceCountsJSON ?: "[]")
+        }
+
         (0..totalPages).each { index ->
             int start = index * batchSize
             int end = (start + batchSize < guids.size()) ? start + batchSize - 1 : guids.size()
@@ -1052,20 +1063,23 @@ class ImportService {
                     }
 
                     //only try stats if there were some records (and no other breaking errors)
-                    ADDITIONAL_OCC_STATS.each { stats ->
-                        def url_stats = url + "&fq=" + stats.value
-                        //log.info("url_stats = " + url_stats)
-                        def queryResponse_stats = new URL(Encoder.encodeUrl(url_stats)).getText("UTF-8")
-                        JSONObject jsonObj_stats = JSON.parse(queryResponse_stats)
-                        if (jsonObj_stats.containsKey("facet_counts")) {
-                            def facetCounts_stats = jsonObj_stats?.facet_counts?.facet_fields?.taxon_concept_lsid
-                            facetCounts_stats.eachWithIndex { val, idx ->
-                                // facets results are a list with key, value, key, value, etc
-                                if (idx % 2 == 0) {
-                                    def docWithRecs = docs.find { it.guid == val }
-                                    def statsField = stats.key
-                                    docWithRecs[statsField] = facetCounts_stats[idx + 1] //add the count
-                                    //no need to re-add to docsWithRecs since by-reference
+                    if (grailsApplication.config?.additionalOccurrenceCountsJSON) {
+                        AdditionalOccStats.each { stats ->
+
+                            def url_stats = url + "&fq=" + stats.recordsquery
+                            //log.info("url_stats = " + url_stats)
+                            def queryResponse_stats = new URL(Encoder.encodeUrl(url_stats)).getText("UTF-8")
+                            JSONObject jsonObj_stats = JSON.parse(queryResponse_stats)
+                            if (jsonObj_stats.containsKey("facet_counts")) {
+                                def facetCounts_stats = jsonObj_stats?.facet_counts?.facet_fields?.taxon_concept_lsid
+                                facetCounts_stats.eachWithIndex { val, idx ->
+                                    // facets results are a list with key, value, key, value, etc
+                                    if (idx % 2 == 0) {
+                                        def docWithRecs = docs.find { it.guid == val }
+                                        def statsField = stats.solrfield
+                                        docWithRecs[statsField] = facetCounts_stats[idx + 1] //add the count
+                                        //no need to re-add to docsWithRecs since by-reference
+                                    }
                                 }
                             }
                         }
