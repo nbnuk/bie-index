@@ -77,7 +77,7 @@ class ImportService {
             ALATerm.nameComplete,
             ALATerm.nameFormatted,
     ] as Set
-    
+
     def indexService, searchService
 
     def grailsApplication
@@ -1018,7 +1018,7 @@ class ImportService {
      * @return
      */
     def searchOccurrencesWithGuids(List docs, Queue commitQueue) {
-        int batchSize = 20 // even with POST SOLR throws 400 code is batchSize is more than 100
+        int batchSize = 25 // even with POST SOLR throws 400 code is batchSize is more than 100
         List guids = docs.collect { it.guid }
         int totalPages = ((guids.size() + batchSize - 1) / batchSize) -1
         log.debug "total = ${guids.size()} || batchSize = ${batchSize} || totalPages = ${totalPages}"
@@ -1033,8 +1033,8 @@ class ImportService {
 
         (0..totalPages).each { index ->
             int start = index * batchSize
-            int end = (start + batchSize < guids.size()) ? start + batchSize - 1 : guids.size()
-            log "paging biocache search - ${start} to ${end}"
+            int end = (start + batchSize < guids.size()) ? start + batchSize : guids.size() //end is exclusive, not inclusive
+            log "paging biocache search - ${start} to ${end-1}"
             def guidSubset = guids.subList(start,end)
             def guidParamList = guidSubset.collect { String guid -> ClientUtils.escapeQueryChars(guid) } // URL encode guids
             def query = "taxon_concept_lsid:" + guidParamList.join("+OR+taxon_concept_lsid:")

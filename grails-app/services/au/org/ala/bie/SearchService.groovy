@@ -943,6 +943,7 @@ class SearchService {
                 categories: [],
                 simpleProperties: [],
                 images: [],
+                occurrenceCounts: [],
                 identifiers: identifiers.collect { identifier ->
                     def datasetURL = getDataset(identifier.datasetID, datasetMap)?.guid
                     def datasetName = getDataset(identifier.datasetID, datasetMap)?.name
@@ -991,6 +992,21 @@ class SearchService {
             model.taxonConcept["acceptedConceptID"] = taxon.acceptedConceptID
         if (taxon.acceptedConceptName)
             model.taxonConcept["acceptedConceptName"] = taxon.acceptedConceptName
+
+        def docStats = [:]
+        if (taxon.containsKey("occurrenceCount")) {
+            docStats.put("occurrenceCount", taxon["occurrenceCount"])
+        }
+        def jsonSlurper = new JsonSlurper()
+        def AdditionalOccStats = jsonSlurper.parseText(grailsApplication.config?.additionalOccurrenceCountsJSON ?: "[]")
+        AdditionalOccStats.each { stats ->
+            if (taxon.containsKey(stats.solrfield)) {
+                docStats.put(stats.solrfield, taxon[stats.solrfield])
+            }
+        }
+        if (docStats.size()) {
+            model.occurrenceCounts = docStats
+        }
 
         if(getAdditionalResultFields()) {
             def doc = [:]
@@ -1097,7 +1113,7 @@ class SearchService {
 
         // add occurrence counts
         if(grailsApplication.config.occurrenceCounts.enabled.asBoolean()){
-            docs = populateOccurrenceCounts(docs, params) //TODO: this should no longer be needed since occurrenceCount value is kept up-to-date
+            docs = populateOccurrenceCounts(docs, params) //this should no longer be needed since occurrenceCount value is kept up-to-date, so now turned off in the config file
         }
 
         def jsonSlurper = new JsonSlurper()
@@ -1407,21 +1423,24 @@ class SearchService {
 
         if (guids.size() > 0) {
             try {
-                def url = "${grailsApplication.config.biocacheService.baseUrl}/occurrences/taxaCount"
-                Map params = [:]
-                params.put("guids", guids.join(","))
-                params.put("separator", ",")
+                def guids_chunked = guids.collate(50) //to avoid HTTP error 414 URL too long
+                guids_chunked.each { guid_set ->
+                    def url = "${grailsApplication.config.biocacheService.baseUrl}/occurrences/taxaCount"
+                    Map params = [:]
+                    params.put("guids", guid_set.join(","))
+                    params.put("separator", ",")
 
-                //check for a biocache query context
-                if (requestParams?.bqc){
-                    params.put("fq", requestParams.bqc)
-                }
+                    //check for a biocache query context
+                    if (requestParams?.bqc) {
+                        params.put("fq", requestParams.bqc)
+                    }
 
-                Map results = doPostWithParams(url, params) // returns (JsonObject) Map with guid as key and count as value
-                Map guidsCountsMap = results.get("resp")?:[:]
-                docs.each {
-                    if (it.idxtype == IndexDocType.TAXON.name() && it.guid && guidsCountsMap.containsKey(it.guid))
-                        it.put("occurrenceCount", guidsCountsMap.get(it.guid))
+                    Map results = doPostWithParams(url, params) // returns (JsonObject) Map with guid as key and count as value
+                    Map guidsCountsMap = results.get("resp") ?: [:]
+                    docs.each {
+                        if (it.idxtype == IndexDocType.TAXON.name() && it.guid && guidsCountsMap.containsKey(it.guid))
+                            it.put("occurrenceCount", guidsCountsMap.get(it.guid))
+                    }
                 }
             } catch (Exception ex) {
                 // do nothing but log it
@@ -1447,7 +1466,7 @@ class SearchService {
             indexServerUrlPrefix = grailsApplication.config.indexOfflineBaseUrl
         }
         def solrServerUrl = indexServerUrlPrefix + "/select" + params.toQueryString() // toQueryString() performs encoding
-        log.debug "SOLR url = ${solrServerUrl}"
+        log.warn "XXXX SOLR url (getCursorSearchResults) = ${solrServerUrl}"
         def queryResponse = new URL(solrServerUrl).getText("UTF-8")
         def js = new JsonSlurper()
         def json = js.parseText(queryResponse)
