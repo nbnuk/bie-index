@@ -1100,7 +1100,7 @@ class ImportService {
     }
 
     def searchOccurrencesWithSampledPlace(List docs, Queue commitQueue) {
-        int batchSize = 20 // even with POST SOLR throws 400 code if batchSize is more than 100
+        int batchSize = 25 // even with POST SOLR throws 400 code if batchSize is more than 100
         def clField = "cl" + grailsApplication.config.regionFeaturedLayerIds
         def sampledField = grailsApplication.config.regionFeaturedLayerSampledField + '_s'
         List place_names = docs.collect { it.bbg_name_s } //TODO:
@@ -1111,8 +1111,8 @@ class ImportService {
 
         (0..totalPages).each { index ->
             int start = index * batchSize
-            int end = (start + batchSize < place_names.size()) ? start + batchSize - 1 : place_names.size()
-            log "paging place biocache search - ${start} to ${end}"
+            int end = (start + batchSize < place_names.size()) ? start + batchSize : place_names.size()
+            log "paging place biocache search - ${start} to ${end-1}"
             def placeSubset = place_names.subList(start,end)
             //URIUtil.encodeWithinQuery(place).replaceAll("%26","&").replaceAll("%3D","=").replaceAll("%3A",":")
             def placeParamList = placeSubset.collect { String place -> '"' + place + '"' } // URL encode place names
