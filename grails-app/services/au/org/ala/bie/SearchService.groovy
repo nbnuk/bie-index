@@ -827,7 +827,7 @@ class SearchService {
 
         //retrieve any common names
         def commonQueryUrl = grailsApplication.config.indexLiveBaseUrl + "/select?wt=json&q=" +
-                "taxonGuid:\"" + taxon.guid + "\"" + "&fq=idxtype:" + IndexDocType.COMMON.name()
+                "taxonGuid:\"" + taxon.guid + "\"" + "&fq=idxtype:" + IndexDocType.COMMON.name() + "&rows=200"
         def commonQueryResponse = new URL(Encoder.encodeUrl(commonQueryUrl)).getText("UTF-8")
         def commonJson = js.parseText(commonQueryResponse)
         def commonNames = commonJson.response.docs.sort { n1, n2 -> n2.priority - n1.priority }
