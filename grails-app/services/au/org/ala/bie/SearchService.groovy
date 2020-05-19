@@ -1043,6 +1043,7 @@ class SearchService {
         //get parents
         def parentGuid = taxon.parentGuid
         def stop = false
+        if (classification.any {it.guid == parentGuid} ) stop = true //prevent loops
 
         while(parentGuid && !stop){
             taxon = retrieveTaxon(parentGuid)
@@ -1054,6 +1055,7 @@ class SearchService {
                         guid : taxon.guid
                 ])
                 parentGuid = taxon.parentGuid
+                if (classification.any {it.guid == parentGuid} ) stop = true //prevent loops
             } else {
                 stop = true
             }
