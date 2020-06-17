@@ -1114,7 +1114,7 @@ class SearchService {
         def fields = params?.fields?.split(",")?.collect({ String f -> f.trim() }) as Set
 
         // add occurrence counts
-        if(grailsApplication.config.occurrenceCounts.enabled.asBoolean()){
+        if((grailsApplication.config.occurrenceCounts?.enabled?:"false").toBoolean()){
             docs = populateOccurrenceCounts(docs, params) //this should no longer be needed since occurrenceCount value is kept up-to-date, so now turned off in the config file
         }
 
