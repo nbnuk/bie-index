@@ -667,5 +667,16 @@
                 "common": "Flowering plants"
             }
         ]
+    },
+    {
+        "speciesGroup": "Chromista",
+        "taxonRank": "kingdom",
+        "taxa": [
+            {
+
+                "name": "Chromista",
+                "common": "Chromista"
+            }
+        ]
     }
 ]
