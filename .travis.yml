@@ -7,20 +7,18 @@ dist: trusty
 branches:
   only:
   - master
+  - develop
 before_cache:
-  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-
+- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 cache:
   directories:
-  - $HOME/.m2
-  - $HOME/.gradle/caches/
-  - $HOME/.gradle/wrapper/
-
+  - "$HOME/.m2"
+  - "$HOME/.gradle/caches/"
+  - "$HOME/.gradle/wrapper/"
 after_success:
-  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && travis_retry ./gradlew publish'
-
+- '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && travis_retry ./gradlew publish'
 env:
   global:
-  - secure: M5RdnCEQHqRvytpOCDWhxSw6oOZLGYODdhHkmCy+5z8zKLWYchwcCSOdGgmEGU9oeEndg1erPKXuvRlpjWHq2VnaFh2EVg8rA82LoB4PkOzqwmCevLdTL6R+ePO/ZHoZo2PoLSbGHV38RkhFI+GTa9s+4/JZjNrm45a2eJx+GaU=
-  - secure: G9qlN6dGDN4RF+137R3lOAXQnTY0uhbt69TyPnaFUFlhUo/ngonaHkULCtDWujcmqkwoWh8QqybmO2XpG78cicFmzcrruQmDVqj2mi7VikDp722rLbSkop44E3xPVNAS1NAb9nyKyZlPMxmxncAA5O6TA//UPtsjIn1HrENJJ/o=
+  - secure: VzcNMOnikynt0FYXjruLgMuHL4YIxIMoGmk15Vlk9yiTb5zoyVEMRTeO+//gy7jyGODet8SUTwjwM5wSLiH4wDbwyZ48geC+uD/si5DnV0QiFRNadTYuN2UbhlPZnH+AUelSkdhxXY5pssLYMXkt74cmJEUih6u0w42tXBppuy67oSKfi35y8zJphQ2b6q9XMcUMSXBrNjHr0HYJlnV+HxS5qoRoi0kg4YFaraluljvVKpktcs0RXdqY1kfPckTSj0jqHg3OhDpE1DLHcEz7M6znC+fTztzt5+yW8dUXprWH/+u9B49Yz1+X1fdtC9Cx7HdTqk84qfMOB3kRDlK5vm8v/CagQjglA+HBQYu7QCXtREI/Z6N5PwAksnSTjKt1bQ7q7izckun8uVnLSlbwTz75O70nVKEgkH0mUAnuLnqivrInnNjsIZfPObKMwn+TCtfxha1VFPjpxh/sK0l215VniZTtjBPOYNQknoJWsrSbPlB/QUaDDuIXM8o6BqzBuUyLeUw3p2r08hh7P6y/EGDnonTLXVnhcBVorBhtMoNcaZDepGwIfFzm4Nt0rmldybsvHrDwYy2JgaxVVMdr74eejWswmu1QRRe2BJhXR8Kje96AYK402CTk+KWM+2Bly7Dpa2bTgaTR2Qt84bIANMQy4/1KvGQoq1QqWqVUNJ4=
+  - secure: NBpgBkrbz4c/l3mNatEb3xs/kzTYetEtt14p9071pdc90uw+JYkQjsZtQe4dyN0ZwZLMfleCYSWTM4jVbuem3J0tl5yye8JE8ja0vlAhEa0pHj+m13uXxi2v2OJjMeDoBI3Qb1Vu0Ynb13E5U0gO/3D2r3nJBtFeMG6YkS/YRWF8e0vu0O/NPEj04e4BdLhxmmthOr0Q1le31v5OYQ6u8a1/r0WhdlzTR5HeWJUB7aFBwpzaEEgRQSRvjBNH0I8AfAzZUzbAcBn3yIvZ3Ihjs4LhN3M9DcfB0CNwpekYFEoKxiQBACGtsYPBS+8vlnBGtfvf49zt4th9dg/dX98bb4Lhz48XvF4//rjjZTwQfLmm/XNS4huiyNBMrC+83KhIDuWliBwINphrVH252Rg8IrRcUCs8HudIFubDZC9KPIZY2UCdr+ghabJROppiD8Tg+7GikzmCeRXX3FWjVGcaGHPVzBOC5MNJWh+x1DfsTT0gf+WdGVG78i4zPFZOdLVxhva8y3QKd/BSm6OQWV3b3YRmFIcI9pnug84LQ/vP5UDlX/f1MJZom4cuRnr7qmdtGFBb2tLrFqA7jLl11nydWsL+WARA2PaupbXsRGShAg0hUHoMJ9AMy6xeE25DbLoa5CG55EB2WtCquUiVFUj5ro4X4VrSGMqZMZgfFQNRUq8=
