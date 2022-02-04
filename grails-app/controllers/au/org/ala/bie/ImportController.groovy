@@ -59,6 +59,9 @@ class ImportController {
 
     def occurrencesplaces(){}
 
+    def speciescountsplaces(){}
+
+
     /**
      * Import a DwC-A into this system.
      *
@@ -207,6 +210,18 @@ class ImportController {
     def importOccurrencesPlaces(){
         def online = BooleanUtils.toBooleanObject(params.online ?: "false")
         def job = execute("importOccurrencesPlaces", "admin.button.loadoccurrenceplaces", { importService.importOccurrenceData(online, true) })
+        asJson (job.status())
+
+    }
+
+    /**
+     * TODO this is for BBG, move to NBN bie-index extension
+     *
+     * @return
+     */
+    def importSpeciesCountsForPlaces(){
+        def online = BooleanUtils.toBooleanObject(params.online ?: "false")
+        def job = execute("importSpeciesCounts", "admin.button.loadspeciescountsplaces", { importService.importSpeciesCounts(online) })
         asJson (job.status())
 
     }

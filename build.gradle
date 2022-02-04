@@ -11,7 +11,7 @@ buildscript {
     }
 }
 
-version "5.0.0-SNAPSHOT"
+version "5.0.1-SNAPSHOT"
 group "au.org.ala"
 
 apply plugin:"eclipse"
@@ -19,6 +19,7 @@ apply plugin:"idea"
 apply plugin:"war"
 apply plugin:"org.grails.grails-web"
 apply plugin:"org.grails.grails-gsp"
+apply plugin:"maven-publish"
 apply plugin:"asset-pipeline"
 
 //apply from: 'https://raw.githubusercontent.com/AtlasOfLivingAustralia/travis-build-configuration/master/travis_grails_publish.gradle'
