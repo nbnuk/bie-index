@@ -1225,6 +1225,9 @@ class SearchService {
                         description     : it.description,
                         occurrenceCount : it.occurrenceCount
                 ]
+                if (it.speciesCount) {
+                    doc.put("speciesCount", it.speciesCount)
+                }
                 if (it.taxonGuid) {
                     doc.put("taxonGuid", it.taxonGuid)
                 }
