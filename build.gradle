@@ -1,6 +1,7 @@
 buildscript {
     repositories {
         mavenLocal()
+        maven { url "https://repository.gbif.org/repository/uk-nbn-releases/" }
         maven { url "http://nexus.ala.org.au/content/groups/public/" }
         maven { url "https://repo.grails.org/grails/core" }
     }
@@ -11,7 +12,7 @@ buildscript {
     }
 }
 
-version "5.0.1"
+version "1.4.2-NBN"
 group "au.org.ala"
 
 apply plugin:"eclipse"
@@ -36,6 +37,7 @@ if (inplace) {
 
 repositories {
     mavenLocal()
+    maven { url "https://repository.gbif.org/repository/uk-nbn-releases/" }
     maven { url "http://nexus.ala.org.au/content/groups/public/" }
     maven { url "https://repo.grails.org/grails/core" }
 }
@@ -76,7 +78,7 @@ dependencies {
         exclude group: 'com.google.guava', module: 'guava'
     }
     compile "com.google.guava:guava:19.0"
-    compile("au.org.ala:ala-name-matching:3.5-SNAPSHOT-NBN") { /* RR was 2.4.7 */
+    compile("au.org.ala:ala-name-matching:3.5.0-NBN") { /* RR was 2.4.7 */
         exclude group: 'org.slf4j', module: 'slf4j-log4j12'
         exclude group: 'org.apache.bval', module: 'org.apache.bval.bundle'
     }
@@ -117,7 +119,6 @@ publishing {
     }
     publications {
         mavenJar(MavenPublication) {
-            artifactId 'bie-index-nbn'
             pom.withXml {
                 def pomNode = asNode()
                 pomNode.dependencyManagement.replaceNode {}
