@@ -173,7 +173,7 @@
             },
             {
                 "name": "HYMENOPTERA",
-                "common": "Sawflies, wasps, bees and ants"
+                "common": "Ants, bees and wasps"
             },
             {
                 "name": "LEPIDOPTERA",
@@ -343,7 +343,7 @@
             },
             {
                 "name": "MALACOSTRACA",
-                "common": "Crabs, lobsters and isopods"
+                "common": "Crabs and lobsters"
             },
             {
                 "name": "MAXILLOPODA",
@@ -378,8 +378,8 @@
         ]
     },
     {
-        "speciesGroup": "Spiders and allies",
-        "taxonRank": "order",
+        "speciesGroup": "SpidersAndAllies",
+        "taxonRank": "class",
         "taxa": [
             {
                 "name": "Pantopoda",
@@ -458,6 +458,40 @@
         ]
     },
     {
+        "speciesGroup": "Plants",
+        "facetName": "species_group",
+        "taxa": [
+            {
+                "name": "Algae",
+                "common": "Algae"
+            },
+            {
+                "name": "Bryophytes",
+                "common": "Bryophytes"
+            },
+            {
+                "name": "Hornworts",
+                "common": "Hornworts"
+            },
+            {
+                "name": "Gymnosperms",
+                "common": "Conifers and Ginkgo"
+            },
+            {
+                "name": "FernsAndAllies",
+                "common": "Ferns and allies"
+            },
+            {
+                "name": "Clubmosses",
+                "common": "Clubmosses and firmosses"
+            },
+            {
+                "name": "Angiosperms",
+                "common": "Flowering plants"
+            }
+        ]
+    },
+    {
         "speciesGroup": "Fungi",
         "taxonRank": "phylum",
         "taxa": [
@@ -480,202 +514,6 @@
             {
                 "name": "Glomeromycota",
                 "common": "Glomeromycota"
-            }
-        ]
-    },
-    {
-        "speciesGroup": "Plants",
-        "taxonRank": "division",
-        "taxa": [
-            {
-                "name": "Algae",
-                "common": "Algae"
-            },
-            {
-                "name": "Charophyta",
-                "common": "Algae"
-            },
-            {
-                "name": "Chlorophycota",
-                "common": "Algae"
-            },
-            {
-                "name": "Chlorophycota",
-                "common": "Algae"
-            },
-            {
-                "name": "Encrusting green algae",
-                "common": "Algae"
-            },
-            {
-                "name": "Filamentous green algae",
-                "common": "Algae"
-            },
-            {
-                "name": "Filamentous red algae",
-                "common": "Algae"
-            },
-            {
-                "name": "Foliose green algae",
-                "common": "Algae"
-            },
-            {
-                "name": "Foliose red algae",
-                "common": "Algae"
-            },
-            {
-                "name": "Rhodophycota indet. (non-calc. crusts)",
-                "common": "Algae"
-            }
-        ]
-    },
-    {
-        "speciesGroup": "Plants",
-        "taxonRank": "phylum",
-        "taxa": [
-            {
-                "name": "Rhodophyta",
-                "common": "Algae"
-            },
-            {
-                "name": "Conjugatophyta",
-                "common": "Algae"
-            },
-            {
-                "name": "Glaucophyta",
-                "common": "Algae"
-            },
-            {
-                "name": "Charophyta",
-                "common": "Algae"
-            },
-            {
-                "name": "Magnoliophyta",
-                "common": "Algae"
-            },
-            {
-                "name": "Chlorophyta",
-                "common": "Algae"
-            }
-        ]
-    },
-    {
-        "speciesGroup": "Plants",
-        "taxonRank": "phylum",
-        "taxa": [
-            {
-                "name": "Bryophyta",
-                "common": "Bryophytes"
-            },
-            {
-                "name": "Marchantiophyta",
-                "common": "Bryophytes"
-            }
-        ]
-    },
-    {
-        "speciesGroup": "Plants",
-        "taxonRank": "division",
-        "taxa": [
-            {
-                "name": "Anthocerophyta",
-                "common": "Hornworts"
-            }
-        ]
-    },
-    {
-        "speciesGroup": "Plants",
-        "taxonRank": "class",
-        "taxa": [
-            {
-                "name": "Pinopsida",
-                "common": "Gymnosperms and Ginkgo"
-            }
-        ]
-    },
-    {
-        "speciesGroup": "Plants",
-        "taxonRank": "class",
-        "taxa": [
-            {
-                "name": "Ginkgoopsida",
-                "common": "Gymnosperms and Ginkgo"
-            }
-        ]
-    },
-    {
-        "speciesGroup": "Plants",
-        "taxonRank": "phylum",
-        "taxa": [
-            {
-                "name": "Pteridophyta",
-                "common": "Ferns and allies"
-            }
-        ]
-    },
-    {
-        "speciesGroup": "Plants",
-        "taxonRank": "order",
-        "taxa": [
-            {
-                "name": "Isoetales",
-                "common": "Ferns and allies"
-            },
-            {
-                "name": "Equisetales",
-                "common": "Ferns and allies"
-            }
-        ]
-    },
-    {
-        "speciesGroup": "Plants",
-        "taxonRank": "order",
-        "taxa": [
-            {
-
-                "name": "Selaginellales",
-                "common": "Clubmosses and firmosses"
-            },
-            {
-                "name": "Lycopodiales",
-                "common": "Clubmosses and firmosses"
-            },
-            {
-                "name": "Lycopodiopsida",
-                "common": "Clubmosses and firmosses"
-            }
-        ]
-    },
-    {
-        "speciesGroup": "Plants",
-        "taxonRank": "division",
-        "taxa": [
-            {
-
-                "name": "Anthophyta",
-                "common": "Flowering plants"
-            }
-        ]
-    },
-    {
-        "speciesGroup": "Plants",
-        "taxonRank": "class",
-        "taxa": [
-            {
-
-                "name": "Magnoliopsida",
-                "common": "Flowering plants"
-            }
-        ]
-    },
-    {
-        "speciesGroup": "Chromista",
-        "taxonRank": "kingdom",
-        "taxa": [
-            {
-
-                "name": "Chromista",
-                "common": "Chromista"
             }
         ]
     }

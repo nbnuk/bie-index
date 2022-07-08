@@ -43,14 +43,6 @@
         "branch": null,
         "notes": null,
         "otherNames": [],
-        "rank": "infrakingdom",
-        "rankGroup": "kingdom",
-        "rankID": 1300
-    },
-    {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
         "rank": "superphylum",
         "rankGroup": "phylum",
         "rankID": 1800
@@ -69,38 +61,14 @@
     {
         "branch": null,
         "notes": null,
-        "otherNames": [],
-        "rank": "division",
-        "rankGroup": "phylum",
-        "rankID": 2010
-    },
-    {
-        "branch": null,
-        "notes": null,
         "otherNames": [
             "subdivisio (botany)",
             "subdivision (botany)",
             "subphylum"
         ],
-        "rank": "subphylum",
+        "rank": "subplylum",
         "rankGroup": "phylum",
         "rankID": 2200
-    },
-    {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
-        "rank": "subdivision",
-        "rankGroup": "phylum",
-        "rankID": 2210
-    },
-    {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
-        "rank": "infraphylum",
-        "rankGroup": "phylum",
-        "rankID": 2300
     },
     {
         "branch": null,
@@ -131,14 +99,6 @@
         "rank": "subclass",
         "rankGroup": "class",
         "rankID": 3200
-    },
-    {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
-        "rank": "subterclass",
-        "rankGroup": "class",
-        "rankID": 3205
     },
     {
         "branch": null,
@@ -261,14 +221,6 @@
         "rankID": 4400
     },
     {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
-        "rank": "ordinal aggregate",
-        "rankGroup": "order",
-        "rankID": 4410
-    },
-    {
         "branch": "zoology",
         "notes": null,
         "otherNames": [
@@ -291,28 +243,12 @@
     {
         "branch": "zoology",
         "notes": null,
-        "otherNames": [],
-        "rank": "series",
-        "rankGroup": "order",
-        "rankID": 4451
-    },
-    {
-        "branch": "zoology",
-        "notes": null,
         "otherNames": [
             "subseries"
         ],
         "rank": "subseries zoology",
         "rankGroup": "order",
         "rankID": 4455
-    },
-    {
-        "branch": "",
-        "notes": null,
-        "otherNames": [],
-        "rank": "subseries",
-        "rankGroup": "order",
-        "rankID": 4456
     },
     {
         "branch": "zoology",
@@ -335,14 +271,6 @@
         "rankID": 4470
     },
     {
-        "branch": "",
-        "notes": null,
-        "otherNames": [],
-        "rank": "section",
-        "rankGroup": "order",
-        "rankID": 4471
-    },
-    {
         "branch": "zoology",
         "notes": null,
         "otherNames": [
@@ -351,14 +279,6 @@
         "rank": "subsection zoology",
         "rankGroup": "order",
         "rankID": 4475
-    },
-    {
-        "branch": "",
-        "notes": null,
-        "otherNames": [],
-        "rank": "subsection",
-        "rankGroup": "order",
-        "rankID": 4476
     },
     {
         "branch": null,
@@ -397,14 +317,6 @@
         "rank": "infrafamily",
         "rankGroup": "family",
         "rankID": 5550
-    },
-    {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
-        "rank": "family aggregate",
-        "rankGroup": "family",
-        "rankID": 5560
     },
     {
         "branch": null,
@@ -454,14 +366,6 @@
         "rankGroup": "genus",
         "rankID": 5950
     },
-        {
-        "branch": null,
-        "notes": "A named collection of closely related genera",
-        "otherNames": [],
-        "rank": "genus aggregate",
-        "rankGroup": "genus",
-        "rankID": 5951
-    },
     {
         "branch": null,
         "notes": null,
@@ -473,20 +377,10 @@
     {
         "branch": null,
         "notes": "A genus denoting a hybrid or cross",
-        "otherNames": [
-                        "generic hybrid"
-        ],
+        "otherNames": [],
         "rank": "nothogenus",
         "rankGroup": "genus",
         "rankID": 6001
-    },
-    {
-        "branch": null,
-        "notes": "A genus denoting a hybrid or cross",
-        "otherNames": [],
-        "rank": "generic hybrid",
-        "rankGroup": "genus",
-        "rankID": 6002
     },
     {
         "branch": null,
@@ -569,22 +463,6 @@
         "rankGroup": "species",
         "rankID": 6950
     },
-        {
-        "branch": null,
-        "notes": "A named collection of closely related species",
-        "otherNames": [],
-        "rank": "functional group",
-        "rankGroup": "species",
-        "rankID": 6951
-    },
-        {
-        "branch": null,
-        "notes": "A named collection of closely related species",
-        "otherNames": [],
-        "rank": "species aggregate",
-        "rankGroup": "species",
-        "rankID": 6952
-    },
     {
         "branch": null,
         "notes": null,
@@ -612,36 +490,10 @@
     {
         "branch": null,
         "notes": "A hybrid formed by directly crossing two species",
-        "otherNames": [
-                        "species hybrid"
-        ],
+        "otherNames": [],
         "rank": "nothospecies",
         "rankGroup": "species",
         "rankID": 7001
-    },
-    {
-        "branch": null,
-        "notes": "A hybrid formed by directly crossing two species",
-        "otherNames": [],
-        "rank": "species hybrid",
-        "rankGroup": "species",
-        "rankID": 7002
-    },
-    {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
-        "rank": "species pro parte",
-        "rankGroup": "species",
-        "rankID": 7010
-    },
-    {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
-        "rank": "species sensu lato",
-        "rankGroup": "species",
-        "rankID": 7020
     },
     {
         "branch": null,
@@ -692,38 +544,6 @@
         "rankID": 8005
     },
     {
-        "branch": "zoology",
-        "notes": null,
-        "otherNames": [],
-        "rank": "praespecies",
-        "rankGroup": "subspecies",
-        "rankID": 8006
-    },
-    {
-        "branch": "zoology",
-        "notes": null,
-        "otherNames": [],
-        "rank": "sublusus",
-        "rankGroup": "subspecies",
-        "rankID": 8007
-    },
-    {
-        "branch": "zoology",
-        "notes": null,
-        "otherNames": [],
-        "rank": "subspecies aggregate",
-        "rankGroup": "subspecies",
-        "rankID": 8008
-    },
-    {
-        "branch": "zoology",
-        "notes": null,
-        "otherNames": [],
-        "rank": "subspecies hybrid",
-        "rankGroup": "subspecies",
-        "rankID": 8009
-    },
-    {
         "branch": null,
         "notes": null,
         "otherNames": [
@@ -742,22 +562,6 @@
         "rank": "nothovariety",
         "rankGroup": "subspecies",
         "rankID": 8011
-    },
-    {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
-        "rank": "convariety",
-        "rankGroup": "subspecies",
-        "rankID": 8012
-    },
-        {
-        "branch": null,
-        "notes": "A hybrid formed by directly crossing two varieties",
-        "otherNames": [],
-        "rank": "varietal hybrid",
-        "rankGroup": "subspecies",
-        "rankID": 8013
     },
     {
         "branch": null,
@@ -781,8 +585,7 @@
         "branch": null,
         "notes": "A hybrid formed by directly crossing two forms",
         "otherNames": [
-            "nothoforma",
-            "form hybrid"
+            "nothoforma"
         ],
         "rank": "nothoform",
         "rankGroup": "subspecies",
@@ -822,14 +625,6 @@
         "rankGroup": "subspecies",
         "rankID": 8050
     },
-        {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
-        "rank": "ecad",
-        "rankGroup": "subspecies",
-        "rankID": 8051
-    },
     {
         "branch": null,
         "notes": "A bacterial strain or set of strains with the same or similar characteristics, that is differentiated at infrasubspecific level from other strains of the same species or subspecies on the basis of distinctive pathogenicity to one or more plant hosts.",
@@ -849,8 +644,8 @@
     {
         "branch": null,
         "notes": "A chromosome abnormality",
-        "otherNames": ["abberation"],
-        "rank": "aberration",
+        "otherNames": [],
+        "rank": "abberation",
         "rankGroup": "subspecies",
         "rankID": 8100
     },
@@ -882,7 +677,7 @@
         "branch": null,
         "notes": "A parasite adapted to a specific host",
         "otherNames": [],
-        "rank": "forma specialis",
+        "rank": "formaspecialis",
         "rankGroup": "subspecies",
         "rankID": 8140
     },
@@ -901,38 +696,6 @@
         "rank": "breed",
         "rankGroup": "subspecies",
         "rankID": 8150
-    },
-    {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
-        "rank": "microgene",
-        "rankGroup": "subspecies",
-        "rankID": 8200
-    },
-    {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
-        "rank": "microspecies",
-        "rankGroup": "subspecies",
-        "rankID": 8250
-    },
-    {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
-        "rank": "morphotype",
-        "rankGroup": "subspecies",
-        "rankID": 8300
-    },
-    {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
-        "rank": "facies",
-        "rankGroup": "subspecies",
-        "rankID": 8305
     },
     {
         "branch": null,
@@ -977,14 +740,6 @@
             "unranked"
         ],
         "rank": "unknown",
-        "rankGroup": "unknown",
-        "rankID": 0
-    },
-    {
-        "branch": null,
-        "notes": null,
-        "otherNames": [],
-        "rank": "unranked",
         "rankGroup": "unknown",
         "rankID": 0
     }
