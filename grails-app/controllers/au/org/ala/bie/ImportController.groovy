@@ -47,8 +47,6 @@ class ImportController {
 
     def localities(){}
 
-    def habitats(){}
-
     def specieslist(){}
 
     def wordpress(){}
@@ -56,11 +54,6 @@ class ImportController {
     def links(){}
 
     def occurrences(){}
-
-    def occurrencesplaces(){}
-
-    def speciescountsplaces(){}
-
 
     /**
      * Import a DwC-A into this system.
@@ -88,7 +81,7 @@ class ImportController {
     def importAll(){
         def job = execute(
                 "importDwca,importCollectory,deleteDanglingSynonyms,importLayers,importLocalities,importRegions,importHabitats,importHabitats," +
-                    "importWordPressPages,importOccurrences,importOccurrencesPlaces,importConsevationSpeciesLists,buildVernacularSpeciesLists,buildLinkIdentifiers" +
+                    "importWordPressPages,importOccurrences,importConsevationSpeciesLists,buildVernacularSpeciesLists,buildLinkIdentifiers" +
                     "denormaliseTaxa,loadImages,",
                 "admin.button.importall",
                 { importService.importAll() })
@@ -196,32 +189,8 @@ class ImportController {
      * @return
      */
     def importOccurrences(){
-        def online = BooleanUtils.toBooleanObject(params.online ?: "false")
-        def job = execute("importOccurrences", "admin.button.loadoccurrence", { importService.importOccurrenceData(online, false) })
-        asJson (job.status())
-
-    }
-
-    /**
-     * Index place occurrence data
-     *
-     * @return
-     */
-    def importOccurrencesPlaces(){
-        def online = BooleanUtils.toBooleanObject(params.online ?: "false")
-        def job = execute("importOccurrencesPlaces", "admin.button.loadoccurrenceplaces", { importService.importOccurrenceData(online, true) })
-        asJson (job.status())
-
-    }
-
-    /**
-     * TODO this is for BBG, move to NBN bie-index extension
-     *
-     * @return
-     */
-    def importSpeciesCountsForPlaces(){
-        def online = BooleanUtils.toBooleanObject(params.online ?: "false")
-        def job = execute("importSpeciesCounts", "admin.button.loadspeciescountsplaces", { importService.importSpeciesCounts(online) })
+        def online = params.getBoolean('online', false)
+        def job = execute("importOccurrences", "admin.button.loadoccurrence", { importService.importOccurrenceData(online) })
         asJson (job.status())
 
     }
@@ -289,7 +258,7 @@ class ImportController {
         render (model as JSON)
     }
 
-    private def execute(String type, String titleCode, Closure task) {
+    protected def execute(String type, String titleCode, Closure task) {
         def title = message(code: titleCode)
         def types = type.split(',') as Set
         def job = jobService.existing(types)
