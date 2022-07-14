@@ -697,7 +697,7 @@ class ImportService {
                 q: "taxonomicStatus:accepted", // "taxonomicStatus:accepted",
                 //fq: "datasetID:dr2699", // testing only with AFD
                 cursorMark: "*", // gets updated by subsequent searches
-                fl: "id,idxtype,guid,scientificName,datasetID", // will restrict results to docs with these fields (bit like fq)
+                fl: "id,idxtype,guid,scientificName,datasetID", // will restrict results to dos with these fields (bit like fq)
                 rows: pageSize,
                 sort: "id asc", // needed for cursor searching
                 wt: "json"
@@ -768,7 +768,7 @@ class ImportService {
                 paramsMap.cursorMark = searchResults?.nextCursorMark?:""
                 // update view via via JS
                 updateProgressBar(totalPages, page)
-
+                log("${page}. taxaLocatedInHubCountry = ${taxaLocatedInHubCountry.size()} | taxaToSearchOccurrences = ${taxaToSearchOccurrences.size()}")
             } catch (Exception ex) {
                 log.warn "Error calling BIE SOLR: ${ex.message}", ex
                 log("ERROR calling SOLR: ${ex.message}")
@@ -786,7 +786,6 @@ class ImportService {
             log("waiting for indexing to finish...")
         }
     }
-
 
     /**
      * Batch update of SOLR docs for occurrence/location info
@@ -1483,7 +1482,6 @@ class ImportService {
         def nameFormatted = record.value(ALATerm.nameFormatted)
         def taxonRankID = taxonRanks.get(taxonRank) ? taxonRanks.get(taxonRank).rankID : -1
         def taxonomicStatus = record.value(DwcTerm.taxonomicStatus) ?: defaultTaxonomicStatus
-        def nomenclaturalStatus = record.value(DwcTerm.nomenclaturalStatus)
 
         doc["datasetID"] = datasetID
         doc["parentGuid"] = parentNameUsageID
@@ -1494,12 +1492,9 @@ class ImportService {
         }
         doc["scientificName"] = scientificName
         doc["scientificNameAuthorship"] = scientificNameAuthorship
-        doc["nameComplete"] = buildNameComplete(nameComplete, scientificName, scientificNameAuthorship, nomenclaturalStatus)
-        doc["nameFormatted"] = buildNameFormatted(nameFormatted, nameComplete, scientificName, scientificNameAuthorship, taxonRank, taxonRanks, nomenclaturalStatus)
+        doc["nameComplete"] = buildNameComplete(nameComplete, scientificName, scientificNameAuthorship)
+        doc["nameFormatted"] = buildNameFormatted(nameFormatted, nameComplete, scientificName, scientificNameAuthorship, taxonRank, taxonRanks)
         doc["taxonomicStatus"] = taxonomicStatus
-
-        //RR *** force commonNameSingle not to mapped to dynamic_field?
-        //RR *** or preferably figure out priority for pushing a name to the top -> commonNameSingle
 
         //index additional fields that are supplied in the record
         record.terms().each { term ->
@@ -1919,7 +1914,6 @@ class ImportService {
         js.setType(JsonParserType.INDEX_OVERLAY)
         log("Getting species groups")
         def speciesGroupMapper = speciesGroupService.invertedSpeciesGroups
-        //log("speciesGroupMapper: " + speciesGroupMapper.toString())
         log("Starting denormalisation scan for ${online ? 'online' : 'offline'} index")
         log("Clearing existing denormalisations")
         try {
@@ -2069,7 +2063,7 @@ class ImportService {
                         buffer << update
                     }
                     processed++
-                    if (buffer.size() >= bufferLimit) {
+                     if (buffer.size() >= bufferLimit) {
                         indexService.indexBatch(buffer, online)
                         buffer.clear()
                     }
@@ -2144,20 +2138,11 @@ class ImportService {
             if(commonNames) {
                 update["commonName"] = [set: names]
                 update["commonNameExact"] = [set: names]
-                update["commonNameSingle"] = [set: names.first() ] /* first should have highest priority */
+                update["commonNameSingle"] = [set: names.first() ]
             }
         }
 
-        def synonyms = searchService.lookupSynonyms(guid, !online)
-        if (synonyms && !synonyms.isEmpty()) {
-
-            def names = new LinkedHashSet(synonyms.collect { it.scientificName })
-            def namesComplete = new LinkedHashSet(synonyms.collect { it.nameComplete })
-            if(synonyms) {
-                update["synonym"] = [set: names]
-                update["synonymComplete"] = [set: namesComplete]
-            }
-        }
+        nbnDenormaliseEntry(guid, update, online)
 
         def identifiers = searchService.lookupIdentifier(guid, !online)
         if (identifiers) {
@@ -2211,6 +2196,19 @@ class ImportService {
         stack.pop()
         distribution.addAll(currentDistribution)
         return distribution
+    }
+
+    private nbnDenormaliseEntry(guid, online, update) {
+        def synonyms = searchService.lookupSynonyms(guid, !online)
+        if (synonyms && !synonyms.isEmpty()) {
+
+            def names = new LinkedHashSet(synonyms.collect { it.scientificName })
+            def namesComplete = new LinkedHashSet(synonyms.collect { it.nameComplete })
+            if (synonyms) {
+                update["synonym"] = [set: names]
+                update["synonymComplete"] = [set: namesComplete]
+            }
+        }
     }
 
     /**
@@ -2271,16 +2269,11 @@ class ImportService {
      * @param scientificNameAuthorship The authorship
      * @return
      */
-    String buildNameComplete(String nameComplete, String scientificName, String scientificNameAuthorship, String nomenclaturalStatus = "") {
+    String buildNameComplete(String nameComplete, String scientificName, String scientificNameAuthorship) {
         if (nameComplete)
             return nameComplete
-        if (scientificNameAuthorship) {
-            if (nomenclaturalStatus)
-                return scientificName + " " + scientificNameAuthorship + " " + nomenclaturalStatus
+        if (scientificNameAuthorship)
             return scientificName + " " + scientificNameAuthorship
-        }
-        if (nomenclaturalStatus)
-            return scientificName + " " + nomenclaturalStatus
         return scientificName
     }
 
@@ -2301,7 +2294,7 @@ class ImportService {
      *
      * @return The formatted name
      */
-    String buildNameFormatted(String nameFormatted, String nameComplete, String scientificName, String scientificNameAuthorship, String rank, Map rankMap, String nomenclaturalStatus = "") {
+    String buildNameFormatted(String nameFormatted, String nameComplete, String scientificName, String scientificNameAuthorship, String rank, Map rankMap) {
         def rankGroup = rankMap.get(rank)?.rankGroup ?: "unknown"
         def formattedCssClass = rank ? "scientific-name rank-${rankGroup}" : "scientific-name";
 
@@ -2322,14 +2315,8 @@ class ImportService {
             name = name + "</span>"
             return name
         }
-        if (scientificNameAuthorship) {
-            //nomenclaturalStatus added to author span, since not clear that it should have its own
-            if (nomenclaturalStatus)
-                return "<span class=\"${formattedCssClass}\"><span class=\"name\">${StringEscapeUtils.escapeHtml(scientificName)}</span> <span class=\"author\">${StringEscapeUtils.escapeHtml(scientificNameAuthorship) + ' ' + StringEscapeUtils.escapeHtml(nomenclaturalStatus)}</span></span>"
+        if (scientificNameAuthorship)
             return "<span class=\"${formattedCssClass}\"><span class=\"name\">${StringEscapeUtils.escapeHtml(scientificName)}</span> <span class=\"author\">${StringEscapeUtils.escapeHtml(scientificNameAuthorship)}</span></span>"
-        }
-        if (nomenclaturalStatus)
-            return "<span class=\"${formattedCssClass}\"><span class=\"name\">${StringEscapeUtils.escapeHtml(scientificName)}</span> <span class=\"author\">${StringEscapeUtils.escapeHtml(nomenclaturalStatus)}</span></span>"
         return "<span class=\"${formattedCssClass}\"><span class=\"name\">${StringEscapeUtils.escapeHtml(scientificName)}</span></span>"
     }
 
