@@ -151,7 +151,7 @@ class ImportService {
                         importLocalities()
                         break
                     case 'occurrences':
-                        importOccurrenceData(false, false)
+                        importOccurrenceData(false)//NBN PATCH - in ALA
                         break
                     case 'regions':
                         importRegions()
@@ -214,7 +214,7 @@ class ImportService {
         }
         indexService.indexBatch(batch)
         log"Finished indexing ${layers.size()} layers"
-        log "Finished layer import"
+        log "Finsihed layer import"
     }
 
     def importLocalities() {
@@ -553,7 +553,7 @@ class ImportService {
      * @param fld
      * @throws Exception
      */
-    def clearFieldValues(String fld, Boolean online) throws Exception {
+    def clearFieldValues(String fld, Boolean online) throws Exception {//NBN PATCH - in ALA
         int page = 1
         int pageSize = 1000
         def js = new JsonSlurper()
@@ -690,7 +690,7 @@ class ImportService {
      * http://bie-dev.ala.org.au/solr/bie/select?q=idxtype:TAXON+AND+taxonomicStatus:accepted&wt=json&rows=100&indent=true&sort=id+asc&cursorMark=*
      * Pagination via cursor: https://cwiki.apache.org/confluence/display/solr/Pagination+of+Results
      **/
-    def importOccurrenceData(Boolean online = false) throws Exception {
+    def importOccurrenceData(Boolean online = false) throws Exception {//NBN PATCH - in ALA
         String nationalSpeciesDatasets = grailsApplication.config.nationalSpeciesDatasets // comma separated String
         def pageSize = 10000
         def paramsMap = [
@@ -831,7 +831,6 @@ class ImportService {
         totalDocumentsUpdated
     }
 
-
     /**
      * Poll the queue of docs and index in batches
      *
@@ -877,7 +876,7 @@ class ImportService {
      * @return
      */
     def searchOccurrencesWithGuids(List docs, Queue commitQueue) {
-        int batchSize = 25 // even with POST SOLR throws 400 code is batchSize is more than 100
+        int batchSize = 20 // even with POST SOLR throws 400 code is batchSize is more than 100
         List guids = docs.collect { it.guid }
         int totalPages = ((guids.size() + batchSize - 1) / batchSize) -1
         log.debug "total = ${guids.size()} || batchSize = ${batchSize} || totalPages = ${totalPages}"
@@ -957,9 +956,6 @@ class ImportService {
         }
 
     }
-
-
-
 
     /**
      * Update TAXON SOLR doc with conservation status info

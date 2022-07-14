@@ -189,7 +189,7 @@ class ImportController {
      * @return
      */
     def importOccurrences(){
-        def online = params.getBoolean('online', false)
+        def online = params.getBoolean('online', false)//NBN PATCH - in ALA
         def job = execute("importOccurrences", "admin.button.loadoccurrence", { importService.importOccurrenceData(online) })
         asJson (job.status())
 
