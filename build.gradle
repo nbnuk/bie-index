@@ -23,7 +23,7 @@ apply plugin:"org.grails.grails-gsp"
 apply plugin:"maven-publish"
 apply plugin:"asset-pipeline"
 
-//apply from: 'https://raw.githubusercontent.com/AtlasOfLivingAustralia/travis-build-configuration/master/travis_grails_publish.gradle'
+apply from: 'https://raw.githubusercontent.com/nbnuk/travis-build-configuration/master/travis_grails_publish.gradle'
 
 boolean inplace = false
 if (inplace) {
@@ -105,37 +105,4 @@ assets {
     packagePlugin = true
     minifyJs = true
     minifyCss = true
-}
-
-publishing {
-    repositories {
-//        maven {
-//            name 'Nexus'
-//            url "https://repository.gbif.org/repository/${project.version.endsWith('-SNAPSHOT') ? 'uk-nbn-snapshots' : 'uk-nbn-releases' }"
-//            credentials {
-//                username = System.getenv('TRAVIS_DEPLOY_USERNAME')
-//                password = System.getenv('TRAVIS_DEPLOY_PASSWORD')
-//            }
-//        }
-        mavenLocal()
-    }
-    publications {
-        mavenJar(MavenPublication) {
-            pom.withXml {
-                def pomNode = asNode()
-                pomNode.dependencyManagement.replaceNode {}
-
-                // simply remove dependencies without a version
-                // version-less dependencies are handled with dependencyManagement
-                // see https://github.com/spring-gradle-plugins/dependency-management-plugin/issues/8 for more complete solutions
-                pomNode.dependencies.dependency.findAll {
-                    it.version.text().isEmpty()
-                }.each {
-                    it.replaceNode {}
-                }
-            }
-            from components.java
-
-        }
-    }
 }
