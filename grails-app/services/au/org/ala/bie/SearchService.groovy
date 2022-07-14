@@ -1176,7 +1176,7 @@ class SearchService {
                         "infoSourceName" : it.datasetName,
                         "infoSourceURL" : "${grailsApplication.config.collectoryBaseUrl}/public/show/${it.datasetID}"
                 ]
-            } else if (it.idxtype == IndexDocType.REGIONFEATURED.name()){
+            } else if (it.idxtype == "REGIONFEATURED"){
                 doc = [
                         id              : it.id,
                         guid            : it.guid,

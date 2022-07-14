@@ -17,6 +17,5 @@ enum IndexDocType {
     WORDPRESS,
     COMMON,
     IDENTIFIER,
-    TAXONVARIANT,
-    REGIONFEATURED
+    TAXONVARIANT
 }
