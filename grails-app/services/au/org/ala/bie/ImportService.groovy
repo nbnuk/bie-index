@@ -2194,7 +2194,7 @@ class ImportService {
         return distribution
     }
 
-    private nbnDenormaliseEntry(guid, online, update) {
+    protected nbnDenormaliseEntry(guid, update, online) {
         def synonyms = searchService.lookupSynonyms(guid, !online)
         if (synonyms && !synonyms.isEmpty()) {
 
