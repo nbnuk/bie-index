@@ -1177,41 +1177,7 @@ class SearchService {
                         "infoSourceURL" : "${grailsApplication.config.collectoryBaseUrl}/public/show/${it.datasetID}"
                 ]
             } else if (it.idxtype == "REGIONFEATURED"){
-                doc = [
-                        id              : it.id,
-                        guid            : it.guid,
-                        linkIdentifier  : it.linkIdentifier,
-                        idxtype         : it.idxtype,
-                        name            : it.name,
-                        description     : it.description,
-                        occurrenceCount : it.occurrenceCount
-                ]
-
-                doc.put("speciesCount", it.speciesCount?it.speciesCount:0)
-
-                if (it.taxonGuid) {
-                    doc.put("taxonGuid", it.taxonGuid)
-                }
-                if (it.centroid) {
-                    doc.put("centroid", it.centroid)
-                }
-                if (it.'point-0.0001') {
-                    doc.put("point-0.0001", it.'point-0.0001')
-                }
-                if (it.longitude) {
-                    doc.put("longitude", it.longitude)
-                }
-                if (it.latitude) {
-                    doc.put("latitude", it.latitude)
-                }
-                def fieldsRF = grailsApplication.config.regionFeaturedLayerFields.split(",").findAll { !it.isEmpty() }
-                if (fieldsRF) {
-                    fieldsRF.each { field ->
-                        if (it."${field}_s") {
-                            doc.put(field+"_s", it."${field}_s")
-                        }
-                    }
-                }
+                doc = nbnBuildRegionFeaturedDoc(it)
             } else {
                 doc = [
                         id            : it.id,
@@ -1446,5 +1412,44 @@ class SearchService {
             additionalResultFields = fields.collect { it }
         }
         additionalResultFields
+    }
+
+    private nbnBuildRegionFeaturedDoc(it) {
+        doc = [
+                id              : it.id,
+                guid            : it.guid,
+                linkIdentifier  : it.linkIdentifier,
+                idxtype         : it.idxtype,
+                name            : it.name,
+                description     : it.description,
+                occurrenceCount : it.occurrenceCount
+        ]
+
+        doc.put("speciesCount", it.speciesCount?it.speciesCount:0)
+
+        if (it.taxonGuid) {
+            doc.put("taxonGuid", it.taxonGuid)
+        }
+        if (it.centroid) {
+            doc.put("centroid", it.centroid)
+        }
+        if (it.'point-0.0001') {
+            doc.put("point-0.0001", it.'point-0.0001')
+        }
+        if (it.longitude) {
+            doc.put("longitude", it.longitude)
+        }
+        if (it.latitude) {
+            doc.put("latitude", it.latitude)
+        }
+        def fieldsRF = grailsApplication.config.regionFeaturedLayerFields.split(",").findAll { !it.isEmpty() }
+        if (fieldsRF) {
+            fieldsRF.each { field ->
+                if (it."${field}_s") {
+                    doc.put(field+"_s", it."${field}_s")
+                }
+            }
+        }
+        return doc
     }
 }
