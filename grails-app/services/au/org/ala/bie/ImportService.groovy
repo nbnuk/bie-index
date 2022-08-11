@@ -78,6 +78,7 @@ class ImportService {
             ALATerm.nameFormatted,
     ] as Set
 
+
     def indexService, searchService
 
     def grailsApplication
@@ -150,10 +151,7 @@ class ImportService {
                         importLocalities()
                         break
                     case 'occurrences':
-                        importOccurrenceData(false, false)
-                        break
-                    case 'occurrencesplaces':
-                        importOccurrenceData(false, true)
+                        importOccurrenceData(false)//NBN PATCH - in ALA
                         break
                     case 'regions':
                         importRegions()
@@ -216,7 +214,7 @@ class ImportService {
         }
         indexService.indexBatch(batch)
         log"Finished indexing ${layers.size()} layers"
-        log "Finished layer import"
+        log "Finsihed layer import"
     }
 
     def importLocalities() {
@@ -239,17 +237,12 @@ class ImportService {
 
     def importRegions() {
         log "Starting regions import"
-        String[] regionFeaturedIds
-        if(grailsApplication.config.regionFeaturedLayerIds) {
-            regionFeaturedIds = grailsApplication.config.regionFeaturedLayerIds.split(',')
-            log("Featured regions = " + regionFeaturedIds.toString())
-        }
         def js = new JsonSlurper()
         def layers = js.parseText(new URL(Encoder.encodeUrl(grailsApplication.config.layersServicesUrl + "/layers")).getText("UTF-8"))
         indexService.deleteFromIndex(IndexDocType.REGION)
         layers.each { layer ->
-            if (layer.type == "Contextual" && layer.enabled.toBoolean()) {
-                importLayer(layer, regionFeaturedIds.contains(layer.id.toString()))
+            if (layer.type == "Contextual") {
+                importLayer(layer)
             }
         }
         log"Finished indexing ${layers.size()} region layers"
@@ -263,9 +256,8 @@ class ImportService {
      * @param layer
      * @return
      */
-    private def importLayer(layer, isFeaturedRegion = false) {
-        log("Loading regions from layer " + layer.name + " (" + layer.id + ")")
-        if (isFeaturedRegion) log("-- layer " + layer.name + " is also a featured region")
+    protected def importLayer(layer) {
+        log("Loading regions from layer " + layer.name)
         def keywords = []
 
         if (grailsApplication.config.localityKeywordsUrl) {
@@ -278,40 +270,6 @@ class ImportService {
         file << new URL(Encoder.encodeUrl(url)).openStream()
         file.flush()
         file.close()
-
-        def featuredDynamicFields = [:]
-
-        if (isFeaturedRegion) {
-            if (grailsApplication.config.regionFeaturedLayerFields) {
-                //get additional dynamic fields to store
-                def workspaceLayer = "ALA:" + layer.name
-                def idField = 'ALA:' + grailsApplication.config.regionFeaturedLayerIDfield
-                def urlAttribs = grailsApplication.config.geoserverUrl + "/wfs?request=GetFeature&version=1.0.0&service=wfs&typeName=" + workspaceLayer + "&propertyname=" + grailsApplication.config.regionFeaturedLayerFields
-                def tempFileAttribsPath = "/tmp/attribs_${layer.id}.xml"
-                def fileAttribs = new File(tempFileAttribsPath).newOutputStream()
-                fileAttribs << new URL(Encoder.encodeUrl(urlAttribs)).openStream()
-                fileAttribs.flush()
-                fileAttribs.close()
-                if (new File(tempFileAttribsPath).exists() && new File(tempFileAttribsPath).length() > 0) {
-                    def xmlDoc = new XmlParser().parse(tempFileAttribsPath)
-                    for (fm in xmlDoc.'gml:featureMember') {
-                        def idValue = fm.("ALA:" + layer.name).(idField.toString()).text()
-                        def faMap = [:]
-                        for (fa in fm.(workspaceLayer.toString())[0].children()) {
-                            def attrName = fa.name().localPart
-                            def attrVal = fa.text()
-                            faMap.put(attrName, attrVal)
-                        }
-                        featuredDynamicFields.put(idValue, faMap)
-                    }
-
-                        //xmlDoc.value()[1]
-                        //xmlDoc.'gml:featureMember'[0].'ALA:London'.'ALA:gid'.text()
-
-
-                }
-            }
-        }
 
         if (new File(tempFilePath).exists() && new File(tempFilePath).length() > 0) {
 
@@ -359,30 +317,6 @@ class ImportService {
                     }
 
                     batch << doc
-
-                    if (isFeaturedRegion) {
-                        def doc2 = doc.findAll {it.key != "idxtype"}
-                        doc2["idxtype"] = IndexDocType.REGIONFEATURED.name()
-                        def shp_idValue = currentLine[1]
-                        if (featuredDynamicFields.containsKey(shp_idValue)) {
-                            //find shp_idfield in xml FIELDSSID (="BBG_UNIQUE" for our example)
-                            def shpAttrs = featuredDynamicFields.get(shp_idValue)
-                            for (attr in shpAttrs.keySet()) {
-                                //add attr key to doc2[] with value attr.value
-                                doc2[attr + '_s'] = shpAttrs.get(attr)
-                            }
-                            def centroid = doc['centroid']?:'' //centroid will be something like POINT(-2.24837969557765 53.5201084106602)
-                            if (centroid) {
-                                def vals = centroid.findAll( /-?\d+\.\d*|-?\d*\.\d+|-?\d+/ )*.toDouble()
-                                if (vals.size() == 2) {
-                                    doc2['longitude'] = vals[0]
-                                    doc2['latitude'] = vals[1]
-                                    doc2['point-0.0001'] = vals[1].round(4).toString() + ',' + vals[0].round(4).toString()
-                                }
-                            }
-                        }
-                        batch << doc2
-                    }
 
                     if (batch.size() > 10000) {
                         indexService.indexBatch(batch)
@@ -615,24 +549,11 @@ class ImportService {
     }
 
     /**
-     * Removes field values from all records in index
-     * @param fld
-     * @throws Exception
-     */
-    def clearFieldValues(String fld) throws Exception {
-        try {
-            clearFieldValues(fld, "", false)
-        } catch (Exception ex) {
-            log.warn "Error clearing occurrenceCounts: ${ex.message}", ex
-        }
-    }
-    /**
      * Removes field values from records in index matching the provided fq
      * @param fld
-     * @param fq
      * @throws Exception
      */
-    def clearFieldValues(String fld, String fq, Boolean online) throws Exception {
+    def clearFieldValues(String fld, Boolean online) throws Exception {//NBN PATCH - in ALA
         int page = 1
         int pageSize = 1000
         def js = new JsonSlurper()
@@ -641,7 +562,6 @@ class ImportService {
         try {
             while (true) {
                 def solrServerUrl = baseUrl + "/select?wt=json&q=*:*&fq=" + fld + ":[*+TO+*]&start=0&rows=" + pageSize //note, always start at 0 since getting rid of all values
-                if (fq != "") solrServerUrl = solrServerUrl + "&fq=" + fq
                 log.info("SOLR clear field URL: " + solrServerUrl)
                 def queryResponse = Encoder.encodeUrl(solrServerUrl).toURL().getText("UTF-8")
                 def json = js.parseText(queryResponse)
@@ -770,50 +690,35 @@ class ImportService {
      * http://bie-dev.ala.org.au/solr/bie/select?q=idxtype:TAXON+AND+taxonomicStatus:accepted&wt=json&rows=100&indent=true&sort=id+asc&cursorMark=*
      * Pagination via cursor: https://cwiki.apache.org/confluence/display/solr/Pagination+of+Results
      **/
-
-
-    def importOccurrenceData(Boolean online = false, Boolean forRegionFeatured = false) throws Exception {
+    def importOccurrenceData(Boolean online = false) throws Exception {//NBN PATCH - in ALA
         String nationalSpeciesDatasets = grailsApplication.config.nationalSpeciesDatasets // comma separated String
         def pageSize = 10000
         def paramsMap = [
                 q: "taxonomicStatus:accepted", // "taxonomicStatus:accepted",
                 //fq: "datasetID:dr2699", // testing only with AFD
                 cursorMark: "*", // gets updated by subsequent searches
-                fl: "id,idxtype,guid,scientificName,datasetID", // will restrict results to docs with these fields (bit like fq)
+                fl: "id,idxtype,guid,scientificName,datasetID", // will restrict results to dos with these fields (bit like fq)
                 rows: pageSize,
                 sort: "id asc", // needed for cursor searching
                 wt: "json"
         ]
-        if (forRegionFeatured) {
-            pageSize = 1000
-            def sampledField = grailsApplication.config.regionFeaturedLayerSampledField + '_s' //TODO set fl below with this
-            paramsMap = [
-                    q: "idxtype:REGIONFEATURED",
-                    cursorMark: "*", // gets updated by subsequent searches
-                    fl: "id,idxtype,guid,bbg_name_s", // will restrict results to docs with these fields (bit like fq)
-                    rows: pageSize,
-                    sort: "id asc", // needed for cursor searching
-                    wt: "json"
-            ]
-        }
-        try {
-            if (forRegionFeatured) {
-                clearFieldValues("occurrenceCount", "idxtype:REGIONFEATURED", online)
-            } else {
-                clearFieldValues("occurrenceCount", "idxtype:TAXON", online)
 
+        try {
+
+                clearFieldValues("occurrenceCount",  online)
+//do in super
                 if (grailsApplication.config?.additionalOccurrenceCountsJSON) {
                     def jsonSlurper = new JsonSlurper()
                     def AdditionalOccStats = jsonSlurper.parseText(grailsApplication.config?.additionalOccurrenceCountsJSON ?: "[]")
                     AdditionalOccStats.each {
                         log.info("it.solrfield = " + it.solrfield)
-                        clearFieldValues(it.solrfield, "idxtype:TAXON", online)
+                        clearFieldValues(it.solrfield,  online)
                     }
                 }
+//end
 
-            }
         } catch (Exception ex) {
-                log.warn "Error clearing occurrenceCounts: ${ex.message}", ex
+            log.warn "Error clearing occurrenceCounts: ${ex.message}", ex
         }
 
 
@@ -824,15 +729,8 @@ class ImportService {
         def searchCount = searchService.getCursorSearchResults(new MapSolrParams(countMap), !online) // could throw exception
         def totalDocs = searchCount?.response?.numFound?:0
         int totalPages = (totalDocs + pageSize - 1) / pageSize
-        if (!forRegionFeatured) {
-            log.debug "totalDocs = ${totalDocs} || totalPages = ${totalPages}"
-            log("Processing " + String.format("%,d", totalDocs) + " taxa (via ${paramsMap.q})...<br>")
-            // send to browser
-        } else {
-            log.debug "Featured Region - totalDocs = ${totalDocs} || totalPages = ${totalPages}"
-            log("Processing " + String.format("%,d", totalDocs) + " places (via ${paramsMap.q})...<br>")
-            // send to browser
-        }
+        log.debug "totalDocs = ${totalDocs} || totalPages = ${totalPages}"
+        log("Processing " + String.format("%,d", totalDocs) + " taxa (via ${paramsMap.q})...<br>") // send to browser
 
         def promiseList = new PromiseList() // for biocache queries
         Queue commitQueue = new ConcurrentLinkedQueue()  // queue to put docs to be indexes
@@ -849,42 +747,28 @@ class ImportService {
                 def searchResults = searchService.getCursorSearchResults(solrParams, !online) // use offline or online index to search
                 def resultsDocs = searchResults?.response?.docs?:[]
 
-
                 // buckets to group results into
                 def taxaLocatedInHubCountry = []  // automatically get included
                 def taxaToSearchOccurrences = []  // need to search biocache to see if they are located in hub country
-                def placesToSearchOccurrences = []
 
-                if (!forRegionFeatured) {
-                    // iterate over the result set
-                    resultsDocs.each { doc ->
-                        if (nationalSpeciesDatasets && nationalSpeciesDatasets.contains(doc.datasetID)) {
-                            taxaLocatedInHubCountry.add(doc)
-                            // in national list so _assume_ it is located in host/hub county
-                        } else {
-                            taxaToSearchOccurrences.add(doc)
-                            // search occurrence records to determine if it is located in host/hub county
-                        }
+                // iterate over the result set
+                resultsDocs.each { doc ->
+                    if (nationalSpeciesDatasets && nationalSpeciesDatasets.contains(doc.datasetID)) {
+                        taxaLocatedInHubCountry.add(doc) // in national list so _assume_ it is located in host/hub county
+                    } else {
+                        taxaToSearchOccurrences.add(doc) // search occurrence records to determine if it is located in host/hub county
                     }
-                    log("${page}. taxaLocatedInHubCountry = ${taxaLocatedInHubCountry.size()} | taxaToSearchOccurrences = ${taxaToSearchOccurrences.size()}")
-                    // update national list without occurrence record lookup
-                    updateTaxaWithLocationInfo(taxaLocatedInHubCountry, commitQueue)
-                    // update the rest via occurrence search (non blocking via promiseList)
-                    promiseList << { searchOccurrencesWithGuids(resultsDocs, commitQueue) }
-                } else {
-                    // iterate over the result set
-                    resultsDocs.each { doc ->
-                        placesToSearchOccurrences.add(doc) // count occurrence records
-                    }
-                    promiseList << { searchOccurrencesWithSampledPlace(resultsDocs, commitQueue) }
-                    log("${page}. placesToSearchOccurrences = ${placesToSearchOccurrences.size()}")
                 }
 
+                // update national list without occurrence record lookup
+                updateTaxaWithLocationInfo(taxaLocatedInHubCountry, commitQueue)
+                // update the rest via occurrence search (non blocking via promiseList)
+                promiseList << { searchOccurrencesWithGuids(resultsDocs, commitQueue) }
                 // update cursor
                 paramsMap.cursorMark = searchResults?.nextCursorMark?:""
                 // update view via via JS
                 updateProgressBar(totalPages, page)
-
+                log("${page}. taxaLocatedInHubCountry = ${taxaLocatedInHubCountry.size()} | taxaToSearchOccurrences = ${taxaToSearchOccurrences.size()}")
             } catch (Exception ex) {
                 log.warn "Error calling BIE SOLR: ${ex.message}", ex
                 log("ERROR calling SOLR: ${ex.message}")
@@ -898,97 +782,7 @@ class ImportService {
             //executor.shutdownNow()
             isKeepIndexing = false // stop indexing thread
             executor.shutdown()
-            if (!forRegionFeatured) {
-                log("Total taxa found with occurrence records = ${results.sum()}")
-            } else {
-                log("Total places found with occurrence records = ${results.sum()}")
-            }
-            log("waiting for indexing to finish...")
-        }
-    }
-
-    /**
-     * TODO this method is for BBG and will be moved to an NBN extension to bie-index
-     * @param online
-     * @param forRegionFeatured
-     * @return
-     * @throws Exception
-     */
-    def importSpeciesCounts(Boolean online = false) throws Exception {
-        def pageSize = 1000
-        def paramsMap = [
-                q: "idxtype:REGIONFEATURED",
-                cursorMark: "*", // gets updated by subsequent searches
-                fl: "id,idxtype,guid,bbg_name_s", // will restrict results to docs with these fields (bit like fq)
-                rows: pageSize,
-                sort: "id asc", // needed for cursor searching
-                wt: "json"
-        ]
-
-        try {
-            clearFieldValues("speciesCount", "idxtype:REGIONFEATURED", online)
-        } catch (Exception ex) {
-            log.warn "Error clearing speciesCounts: ${ex.message}", ex
-        }
-
-
-        // first get a count of results so we can determine number of pages to process
-        Map countMap = paramsMap.clone(); // shallow clone is OK
-        countMap.rows = 0
-        countMap.remove("cursorMark")
-        def searchCount = searchService.getCursorSearchResults(new MapSolrParams(countMap), !online) // could throw exception
-        def totalDocs = searchCount?.response?.numFound?:0
-        int totalPages = (totalDocs + pageSize - 1) / pageSize
-        log.debug "Featured Region - totalDocs = ${totalDocs} || totalPages = ${totalPages}"
-        log("Processing " + String.format("%,d", totalDocs) + " places (via ${paramsMap.q})...<br>")
-        // send to browser
-
-        def promiseList = new PromiseList() // for biocache queries
-        Queue commitQueue = new ConcurrentLinkedQueue()  // queue to put docs to be indexes
-        ExecutorService executor = Executors.newSingleThreadExecutor() // consumer of queue - single blocking thread
-        executor.execute {
-            indexDocInQueue(commitQueue, "initialised", online) // will keep polling the queue until terminated via cancel()
-        }
-
-        // iterate over pages
-        (1..totalPages).each { page ->
-            try {
-                MapSolrParams solrParams = new MapSolrParams(paramsMap)
-                log.debug "${page}. paramsMap = ${paramsMap}"
-                def searchResults = searchService.getCursorSearchResults(solrParams, !online) // use offline or online index to search
-                def resultsDocs = searchResults?.response?.docs?:[]
-
-
-                // buckets to group results into
-                def placesToSearchSpecies = []
-
-                // iterate over the result set
-                resultsDocs.each { doc ->
-                    placesToSearchSpecies.add(doc)
-                }
-                promiseList << { searchSpeciesCountsForPlaces(resultsDocs, commitQueue) }
-                log("${page}. placesToSearchSpecies = ${placesToSearchSpecies.size()}")
-
-
-                // update cursor
-                paramsMap.cursorMark = searchResults?.nextCursorMark?:""
-                // update view via via JS
-                updateProgressBar(totalPages, page)
-
-            } catch (Exception ex) {
-                log.warn "Error calling BIE SOLR: ${ex.message}", ex
-                log("ERROR calling SOLR: ${ex.message}")
-            }
-        }
-
-        log("Waiting for all species searches and SOLR commits to finish (could take some time)")
-
-        //promiseList.get() // block until all promises are complete
-        promiseList.onComplete { List results ->
-            //executor.shutdownNow()
-            isKeepIndexing = false // stop indexing thread
-            executor.shutdown()
-            log("Total places found with species counts = ${results.sum()}")
+            log("Total taxa found with occurrence records = ${results.sum()}")
             log("waiting for indexing to finish...")
         }
     }
@@ -1027,54 +821,6 @@ class ImportService {
                         }
                     }
                 }
-                commitQueue.offer(updateDoc) // throw it on the queue
-                totalDocumentsUpdated++
-            } else {
-                log.warn "Updating doc error: missing keys ${doc}"
-            }
-        }
-
-        totalDocumentsUpdated
-    }
-
-    def updatePlacesWithLocationInfo(List docs, Queue commitQueue) {
-        def totalDocumentsUpdated = 0
-
-        docs.each { Map doc ->
-            if (doc.containsKey("id") && doc.containsKey("idxtype")) {
-                Map updateDoc = [:]
-                updateDoc["id"] = doc.id // doc key
-                updateDoc["idxtype"] = ["set": doc.idxtype] // required field
-                updateDoc["guid"] = ["set": doc.guid] // required field
-                if(doc.containsKey("occurrenceCount")){
-                    updateDoc["occurrenceCount"] = ["set": doc["occurrenceCount"]]
-                }
-                commitQueue.offer(updateDoc) // throw it on the queue
-                totalDocumentsUpdated++
-            } else {
-                log.warn "Updating doc error: missing keys ${doc}"
-            }
-        }
-
-        totalDocumentsUpdated
-    }
-
-    /**
-     * TODO this method is for BBG and will be moved to an NBN extension to bie-index
-     * @param docs
-     * @param commitQueue
-     * @return
-     */
-    def updatePlacesWithSpeciesCount(List docs, Queue commitQueue) {
-        def totalDocumentsUpdated = 0
-
-        docs.each { Map doc ->
-            if (doc.containsKey("id") && doc.containsKey("idxtype") && doc.containsKey("speciesCount")) {
-                Map updateDoc = [:]
-                updateDoc["id"] = doc.id // doc key
-                updateDoc["idxtype"] = ["set": doc.idxtype] // required field
-                updateDoc["guid"] = ["set": doc.guid] // required field
-                updateDoc["speciesCount"] = ["set": doc["speciesCount"]]
                 commitQueue.offer(updateDoc) // throw it on the queue
                 totalDocumentsUpdated++
             } else {
@@ -1130,7 +876,7 @@ class ImportService {
      * @return
      */
     def searchOccurrencesWithGuids(List docs, Queue commitQueue) {
-        int batchSize = 25 // even with POST SOLR throws 400 code is batchSize is more than 100
+        int batchSize = 20 // even with POST SOLR throws 400 code is batchSize is more than 100
         List guids = docs.collect { it.guid }
         int totalPages = ((guids.size() + batchSize - 1) / batchSize) -1
         log.debug "total = ${guids.size()} || batchSize = ${batchSize} || totalPages = ${totalPages}"
@@ -1210,147 +956,6 @@ class ImportService {
         }
 
     }
-
-    def searchOccurrencesWithSampledPlace(List docs, Queue commitQueue) {
-        int batchSize = 25 // even with POST SOLR throws 400 code if batchSize is more than 100
-        def clField = "cl" + grailsApplication.config.regionFeaturedLayerIds
-        def sampledField = grailsApplication.config.regionFeaturedLayerSampledField + '_s'
-        List place_names = docs.collect { it.bbg_name_s } //TODO:
-        int totalPages = ((place_names.size() + batchSize - 1) / batchSize) -1
-        log.debug "total = ${place_names.size()} || batchSize = ${batchSize} || totalPages = ${totalPages}"
-        List docsWithRecs = [] // docs to index
-        //log("Getting occurrence data for ${docs.size()} docs")
-
-        (0..totalPages).each { index ->
-            int start = index * batchSize
-            int end = (start + batchSize < place_names.size()) ? start + batchSize : place_names.size()
-            log "paging place biocache search - ${start} to ${end-1}"
-            def placeSubset = place_names.subList(start,end)
-            //URIUtil.encodeWithinQuery(place).replaceAll("%26","&").replaceAll("%3D","=").replaceAll("%3A",":")
-            def placeParamList = placeSubset.collect { String place -> '"' + place + '"' } // URL encode place names
-            def query = clField + ":" + placeParamList.join("+OR+" + clField + ":")
-
-
-            try {
-                // def json = searchService.doPostWithParamsExc(grailsApplication.config.biocache.solr.url +  "/select", postBody)
-                // log.debug "results = ${json?.resp?.response?.numFound}"
-                def url = grailsApplication.config.biocache.solr.url + "/select?q=${query}"
-
-                def url_clean = Encoder.encodeUrl(url)
-                        .replaceAll("&amp;","&")
-                        .replaceAll("&","%26")
-                        .replaceAll("%3D","=")
-                        .replaceAll("%3A",":")
-                        .replaceAll("'","%27")
-                url_clean = url_clean + "&wt=json&indent=true&rows=0&facet=true&facet.field=" + clField + "&facet.mincount=1"
-
-                def queryResponse = new URL(url_clean).getText("UTF-8")
-                JSONObject jsonObj = JSON.parse(queryResponse)
-
-                if (jsonObj.containsKey("facet_counts")) {
-
-                    def facetCounts = jsonObj?.facet_counts?.facet_fields.get(clField)
-                    facetCounts.eachWithIndex { val, idx ->
-                        // facets results are a list with key, value, key, value, etc
-                        if (idx % 2 == 0) {
-                            def docWithRecs = docs.find { it.bbg_name_s == val }
-                            docWithRecs["occurrenceCount"] = facetCounts[idx + 1] //add the count
-                            if(docWithRecs){
-                                docsWithRecs.add(docWithRecs )
-                            }
-                        }
-                    }
-                }
-            } catch (Exception ex) {
-                log.warn "Error calling biocache SOLR: ${ex.message}", ex
-                log("ERROR calling biocache SOLR: ${ex.message}")
-            }
-        }
-
-        if (docsWithRecs.size() > 0) {
-            log.debug "docsWithRecs size = ${docsWithRecs.size()} vs docs size = ${docs.size()}"
-            updatePlacesWithLocationInfo(docsWithRecs, commitQueue)
-        }
-
-    }
-
-
-/**
- * TODO this method is for BBG and will be moved to an NBN extension to bie-index
- * @param docs
- * @param commitQueue
- * @return
- */
-    def searchSpeciesCountsForPlaces(List docs, Queue commitQueue) {
-        int batchSize = 25 // even with POST SOLR throws 400 code if batchSize is more than 100
-        def clField = "cl" + grailsApplication.config.regionFeaturedLayerIds
-        def sampledField = grailsApplication.config.regionFeaturedLayerSampledField + '_s'
-        List place_names = docs.collect { it.bbg_name_s } //TODO:
-        int totalPages = ((place_names.size() + batchSize - 1) / batchSize) -1
-        log.debug "total = ${place_names.size()} || batchSize = ${batchSize} || totalPages = ${totalPages}"
-        List docsWithRecs = [] // docs to index
-        //log("Getting occurrence data for ${docs.size()} docs")
-
-        (0..totalPages).each { index ->
-            int start = index * batchSize
-            int end = (start + batchSize < place_names.size()) ? start + batchSize : place_names.size()
-            log "paging place biocache search - ${start} to ${end-1}"
-            def placeSubset = place_names.subList(start,end)
-            //URIUtil.encodeWithinQuery(place).replaceAll("%26","&").replaceAll("%3D","=").replaceAll("%3A",":")
-            def placeParamList = placeSubset.collect { String place -> '"' + place + '"' } // URL encode place names
-            def query = clField + ":" + placeParamList.join("+OR+" + clField + ":")
-
-
-            try {
-                // def json = searchService.doPostWithParamsExc(grailsApplication.config.biocache.solr.url +  "/select", postBody)
-                // log.debug "results = ${json?.resp?.response?.numFound}"
-                def url = grailsApplication.config.biocache.solr.url + "/select?q=${query}"
-
-                def url_clean = Encoder.encodeUrl(url)
-                        .replaceAll("&amp;","&")
-                        .replaceAll("&","%26")
-                        .replaceAll("%3D","=")
-                        .replaceAll("%3A",":")
-                        .replaceAll("'","%27")
-                url_clean = url_clean + "&wt=json&indent=true&rows=0&facet=true&facet.pivot=lsid," + clField + "&facet.mincount=1&facet.limit=-1"
-
-                def queryResponse = new URL(url_clean).getText("UTF-8")
-                JSONObject jsonObj = JSON.parse(queryResponse)
-
-                if (jsonObj.containsKey("facet_counts")) {
-
-                    def facetPivots = jsonObj?.facet_counts?.facet_pivot.get("lsid,"+clField)
-
-                    facetPivots.each { facetPivot ->
-                        facetPivot.pivot.each { pivot ->
-                            def docWithRecs = docs.find { it.bbg_name_s == pivot.value }
-                            if (docWithRecs) {
-                                if (docWithRecs["speciesCount"]) {
-                                    docWithRecs["speciesCount"] ++
-                                } else {
-                                    docWithRecs["speciesCount"] = 1
-                                }
-                                if (!docsWithRecs.find {it.id == docWithRecs.id }) {
-                                    docsWithRecs.add(docWithRecs)
-                                }
-
-                            }
-                        }
-                    }
-                }
-            } catch (Exception ex) {
-                log.warn "Error calling biocache SOLR: ${ex.message}", ex
-                log("ERROR calling biocache SOLR: ${ex.message}")
-            }
-        }
-
-        if (docsWithRecs.size() > 0) {
-            log.debug "docsWithRecs size = ${docsWithRecs.size()} vs docs size = ${docs.size()}"
-            updatePlacesWithSpeciesCount(docsWithRecs, commitQueue)
-        }
-
-    }
-
 
     /**
      * Update TAXON SOLR doc with conservation status info
@@ -1873,7 +1478,6 @@ class ImportService {
         def nameFormatted = record.value(ALATerm.nameFormatted)
         def taxonRankID = taxonRanks.get(taxonRank) ? taxonRanks.get(taxonRank).rankID : -1
         def taxonomicStatus = record.value(DwcTerm.taxonomicStatus) ?: defaultTaxonomicStatus
-        def nomenclaturalStatus = record.value(DwcTerm.nomenclaturalStatus)
 
         doc["datasetID"] = datasetID
         doc["parentGuid"] = parentNameUsageID
@@ -1884,12 +1488,9 @@ class ImportService {
         }
         doc["scientificName"] = scientificName
         doc["scientificNameAuthorship"] = scientificNameAuthorship
-        doc["nameComplete"] = buildNameComplete(nameComplete, scientificName, scientificNameAuthorship, nomenclaturalStatus)
-        doc["nameFormatted"] = buildNameFormatted(nameFormatted, nameComplete, scientificName, scientificNameAuthorship, taxonRank, taxonRanks, nomenclaturalStatus)
+        doc["nameComplete"] = buildNameComplete(nameComplete, scientificName, scientificNameAuthorship)
+        doc["nameFormatted"] = buildNameFormatted(nameFormatted, nameComplete, scientificName, scientificNameAuthorship, taxonRank, taxonRanks)
         doc["taxonomicStatus"] = taxonomicStatus
-
-        //RR *** force commonNameSingle not to mapped to dynamic_field?
-        //RR *** or preferably figure out priority for pushing a name to the top -> commonNameSingle
 
         //index additional fields that are supplied in the record
         record.terms().each { term ->
@@ -2309,7 +1910,6 @@ class ImportService {
         js.setType(JsonParserType.INDEX_OVERLAY)
         log("Getting species groups")
         def speciesGroupMapper = speciesGroupService.invertedSpeciesGroups
-        //log("speciesGroupMapper: " + speciesGroupMapper.toString())
         log("Starting denormalisation scan for ${online ? 'online' : 'offline'} index")
         log("Clearing existing denormalisations")
         try {
@@ -2534,20 +2134,11 @@ class ImportService {
             if(commonNames) {
                 update["commonName"] = [set: names]
                 update["commonNameExact"] = [set: names]
-                update["commonNameSingle"] = [set: names.first() ] /* first should have highest priority */
+                update["commonNameSingle"] = [set: names.first() ]
             }
         }
 
-        def synonyms = searchService.lookupSynonyms(guid, !online)
-        if (synonyms && !synonyms.isEmpty()) {
-
-            def names = new LinkedHashSet(synonyms.collect { it.scientificName })
-            def namesComplete = new LinkedHashSet(synonyms.collect { it.nameComplete })
-            if(synonyms) {
-                update["synonym"] = [set: names]
-                update["synonymComplete"] = [set: namesComplete]
-            }
-        }
+        nbnDenormaliseEntry(guid, update, online)
 
         def identifiers = searchService.lookupIdentifier(guid, !online)
         if (identifiers) {
@@ -2601,6 +2192,19 @@ class ImportService {
         stack.pop()
         distribution.addAll(currentDistribution)
         return distribution
+    }
+
+    protected nbnDenormaliseEntry(guid, update, online) {
+        def synonyms = searchService.lookupSynonyms(guid, !online)
+        if (synonyms && !synonyms.isEmpty()) {
+
+            def names = new LinkedHashSet(synonyms.collect { it.scientificName })
+            def namesComplete = new LinkedHashSet(synonyms.collect { it.nameComplete })
+            if (synonyms) {
+                update["synonym"] = [set: names]
+                update["synonymComplete"] = [set: namesComplete]
+            }
+        }
     }
 
     /**
@@ -2661,16 +2265,11 @@ class ImportService {
      * @param scientificNameAuthorship The authorship
      * @return
      */
-    String buildNameComplete(String nameComplete, String scientificName, String scientificNameAuthorship, String nomenclaturalStatus = "") {
+    String buildNameComplete(String nameComplete, String scientificName, String scientificNameAuthorship) {
         if (nameComplete)
             return nameComplete
-        if (scientificNameAuthorship) {
-            if (nomenclaturalStatus)
-                return scientificName + " " + scientificNameAuthorship + " " + nomenclaturalStatus
+        if (scientificNameAuthorship)
             return scientificName + " " + scientificNameAuthorship
-        }
-        if (nomenclaturalStatus)
-            return scientificName + " " + nomenclaturalStatus
         return scientificName
     }
 
@@ -2691,7 +2290,7 @@ class ImportService {
      *
      * @return The formatted name
      */
-    String buildNameFormatted(String nameFormatted, String nameComplete, String scientificName, String scientificNameAuthorship, String rank, Map rankMap, String nomenclaturalStatus = "") {
+    String buildNameFormatted(String nameFormatted, String nameComplete, String scientificName, String scientificNameAuthorship, String rank, Map rankMap) {
         def rankGroup = rankMap.get(rank)?.rankGroup ?: "unknown"
         def formattedCssClass = rank ? "scientific-name rank-${rankGroup}" : "scientific-name";
 
@@ -2712,14 +2311,8 @@ class ImportService {
             name = name + "</span>"
             return name
         }
-        if (scientificNameAuthorship) {
-            //nomenclaturalStatus added to author span, since not clear that it should have its own
-            if (nomenclaturalStatus)
-                return "<span class=\"${formattedCssClass}\"><span class=\"name\">${StringEscapeUtils.escapeHtml(scientificName)}</span> <span class=\"author\">${StringEscapeUtils.escapeHtml(scientificNameAuthorship) + ' ' + StringEscapeUtils.escapeHtml(nomenclaturalStatus)}</span></span>"
+        if (scientificNameAuthorship)
             return "<span class=\"${formattedCssClass}\"><span class=\"name\">${StringEscapeUtils.escapeHtml(scientificName)}</span> <span class=\"author\">${StringEscapeUtils.escapeHtml(scientificNameAuthorship)}</span></span>"
-        }
-        if (nomenclaturalStatus)
-            return "<span class=\"${formattedCssClass}\"><span class=\"name\">${StringEscapeUtils.escapeHtml(scientificName)}</span> <span class=\"author\">${StringEscapeUtils.escapeHtml(nomenclaturalStatus)}</span></span>"
         return "<span class=\"${formattedCssClass}\"><span class=\"name\">${StringEscapeUtils.escapeHtml(scientificName)}</span></span>"
     }
 
@@ -2775,5 +2368,5 @@ class ImportService {
             source = new URL(url)
         JsonSlurper slurper = new JsonSlurper()
         return slurper.parse(source)
-     }
+    }
 }

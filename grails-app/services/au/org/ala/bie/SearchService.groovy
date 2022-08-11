@@ -452,7 +452,7 @@ class SearchService {
      * @param taxonID
      * @return
      */
-    private def lookupTaxonByName(String taxonName, Boolean useOfflineIndex = false){
+    protected def lookupTaxonByName(String taxonName, Boolean useOfflineIndex = false){
         def indexServerUrlPrefix = grailsApplication.config.indexLiveBaseUrl
         if (useOfflineIndex) {
             indexServerUrlPrefix = grailsApplication.config.indexOfflineBaseUrl
@@ -520,27 +520,6 @@ class SearchService {
     }
 
     /**
-     * Retrieve details of synonyms for a taxonID
-     *
-     * @param taxonID The taxon identifier
-     * @param useOfflineIndex
-     * @return
-     */
-    def lookupSynonyms(String taxonID, Boolean useOfflineIndex = false){
-        def indexServerUrlPrefix = useOfflineIndex ? grailsApplication.config.indexOfflineBaseUrl : grailsApplication.config.indexLiveBaseUrl
-        def encID = URLEncoder.encode(taxonID, 'UTF-8')
-
-        def synonymQueryUrl = indexServerUrlPrefix + "/select?wt=json&q=" +
-                "acceptedConceptID:\"" + taxonID + "\"" + "&fq=idxtype:" + IndexDocType.TAXON.name() +
-                "&sort=nameComplete+ASC&rows=200"
-
-        def queryResponse = new URL(synonymQueryUrl).getText("UTF-8")
-        def js = new JsonSlurper()
-        def json = js.parseText(queryResponse)
-        json.response.docs
-    }
-
-    /**
      * Retrieve details of a specific identifier by taxonID
      *
      * @param taxonID The taxon identifier
@@ -569,7 +548,7 @@ class SearchService {
     def lookupVernacular(String taxonID, Boolean useOfflineIndex = false){
         def indexServerUrlPrefix = useOfflineIndex ? grailsApplication.config.indexOfflineBaseUrl : grailsApplication.config.indexLiveBaseUrl
         def encID = UriUtils.encodeQueryParam(taxonID, 'UTF-8')
-        def indexServerUrl = indexServerUrlPrefix+ "/select?wt=json&q=taxonGuid:%22${encID}%22&fq=idxtype:${IndexDocType.COMMON.name()}&rows=100" //need to specify enough rows to prevent paging
+        def indexServerUrl = indexServerUrlPrefix+ "/select?wt=json&q=taxonGuid:%22${encID}%22&fq=idxtype:${IndexDocType.COMMON.name()}&rows=100" //FFTF leave out in upgrade //need to specify enough rows to prevent paging
         def queryResponse = new URL(indexServerUrl).getText("UTF-8")
         def js = new JsonSlurper()
         def json = js.parseText(queryResponse)
@@ -816,7 +795,7 @@ class SearchService {
 
         //retrieve any synonyms
         def synonymQueryUrl = grailsApplication.config.indexLiveBaseUrl + "/select?wt=json&q=" +
-                "acceptedConceptID:\"" + taxon.guid + "\"" + "&fq=idxtype:" + IndexDocType.TAXON.name() + "&rows=200&sort=nameComplete+ASC"
+                "acceptedConceptID:\"" + taxon.guid + "\"" + "&fq=idxtype:" + IndexDocType.TAXON.name() + "&rows=200"//FFTF leave out in upgrade
         def synonymQueryResponse = new URL(Encoder.encodeUrl(synonymQueryUrl)).getText("UTF-8")
         def js = new JsonSlurper()
         def synJson = js.parseText(synonymQueryResponse)
@@ -827,7 +806,7 @@ class SearchService {
 
         //retrieve any common names
         def commonQueryUrl = grailsApplication.config.indexLiveBaseUrl + "/select?wt=json&q=" +
-                "taxonGuid:\"" + taxon.guid + "\"" + "&fq=idxtype:" + IndexDocType.COMMON.name() + "&rows=200"
+                "taxonGuid:\"" + taxon.guid + "\"" + "&fq=idxtype:" + IndexDocType.COMMON.name() + "&rows=200"//FFTF leave out in upgrade
         def commonQueryResponse = new URL(Encoder.encodeUrl(commonQueryUrl)).getText("UTF-8")
         def commonJson = js.parseText(commonQueryResponse)
         def commonNames = commonJson.response.docs.sort { n1, n2 -> n2.priority - n1.priority }
@@ -858,12 +837,10 @@ class SearchService {
         def clists_fieldVal = clists.findAll{ it.sourceField != '*' } /* exclude simple list-membership entries */
 
         def conservationStatus = clists_fieldVal.inject([:], { ac, cl ->
-            if (cl.label > "") { //exclude entries where label is empty
-                final cs = taxon[cl.field]
-                if (cs)
-                    ac.put(cl.label, [dr: cl.uid, status: cs])
-                ac
-            }
+            final cs = taxon[cl.field]
+            if (cs)
+                ac.put(cl.label, [dr: cl.uid, status: cs])
+            ac
         })
 
         def model = [
@@ -943,7 +920,6 @@ class SearchService {
                 categories: [],
                 simpleProperties: [],
                 images: [],
-                occurrenceCounts: [],
                 identifiers: identifiers.collect { identifier ->
                     def datasetURL = getDataset(identifier.datasetID, datasetMap)?.guid
                     def datasetName = getDataset(identifier.datasetID, datasetMap)?.name
@@ -993,21 +969,6 @@ class SearchService {
         if (taxon.acceptedConceptName)
             model.taxonConcept["acceptedConceptName"] = taxon.acceptedConceptName
 
-        def docStats = [:]
-        if (taxon.containsKey("occurrenceCount")) {
-            docStats.put("occurrenceCount", taxon["occurrenceCount"])
-        }
-        def jsonSlurper = new JsonSlurper()
-        def AdditionalOccStats = jsonSlurper.parseText(grailsApplication.config?.additionalOccurrenceCountsJSON ?: "[]")
-        AdditionalOccStats.each { stats ->
-            if (taxon.containsKey(stats.solrfield)) {
-                docStats.put(stats.solrfield, taxon[stats.solrfield])
-            }
-        }
-        if (docStats.size()) {
-            model.occurrenceCounts = docStats
-        }
-
         if(getAdditionalResultFields()) {
             def doc = [:]
             getAdditionalResultFields().each { field ->
@@ -1043,7 +1004,7 @@ class SearchService {
         //get parents
         def parentGuid = taxon.parentGuid
         def stop = false
-        if (classification.any {it.guid == parentGuid} ) stop = true //prevent loops
+        if (classification.any {it.guid == parentGuid} ) stop = true //NBN fix - prevent loops
 
         while(parentGuid && !stop){
             taxon = retrieveTaxon(parentGuid)
@@ -1055,7 +1016,7 @@ class SearchService {
                         guid : taxon.guid
                 ])
                 parentGuid = taxon.parentGuid
-                if (classification.any {it.guid == parentGuid} ) stop = true //prevent loops
+                if (classification.any {it.guid == parentGuid} ) stop = true //NBN fix- prevent loops
             } else {
                 stop = true
             }
@@ -1215,42 +1176,8 @@ class SearchService {
                         "infoSourceName" : it.datasetName,
                         "infoSourceURL" : "${grailsApplication.config.collectoryBaseUrl}/public/show/${it.datasetID}"
                 ]
-            } else if (it.idxtype == IndexDocType.REGIONFEATURED.name()){
-                doc = [
-                        id              : it.id,
-                        guid            : it.guid,
-                        linkIdentifier  : it.linkIdentifier,
-                        idxtype         : it.idxtype,
-                        name            : it.name,
-                        description     : it.description,
-                        occurrenceCount : it.occurrenceCount
-                ]
-
-                doc.put("speciesCount", it.speciesCount?it.speciesCount:0)
-
-                if (it.taxonGuid) {
-                    doc.put("taxonGuid", it.taxonGuid)
-                }
-                if (it.centroid) {
-                    doc.put("centroid", it.centroid)
-                }
-                if (it.'point-0.0001') {
-                    doc.put("point-0.0001", it.'point-0.0001')
-                }
-                if (it.longitude) {
-                    doc.put("longitude", it.longitude)
-                }
-                if (it.latitude) {
-                    doc.put("latitude", it.latitude)
-                }
-                def fieldsRF = grailsApplication.config.regionFeaturedLayerFields.split(",").findAll { !it.isEmpty() }
-                if (fieldsRF) {
-                    fieldsRF.each { field ->
-                        if (it."${field}_s") {
-                            doc.put(field+"_s", it."${field}_s")
-                        }
-                    }
-                }
+            } else if (it.idxtype == "REGIONFEATURED"){
+                doc = nbnBuildRegionFeaturedDoc(it)
             } else {
                 doc = [
                         id            : it.id,
@@ -1485,5 +1412,44 @@ class SearchService {
             additionalResultFields = fields.collect { it }
         }
         additionalResultFields
+    }
+
+    private nbnBuildRegionFeaturedDoc(it) {
+        doc = [
+                id              : it.id,
+                guid            : it.guid,
+                linkIdentifier  : it.linkIdentifier,
+                idxtype         : it.idxtype,
+                name            : it.name,
+                description     : it.description,
+                occurrenceCount : it.occurrenceCount
+        ]
+
+        doc.put("speciesCount", it.speciesCount?it.speciesCount:0)
+
+        if (it.taxonGuid) {
+            doc.put("taxonGuid", it.taxonGuid)
+        }
+        if (it.centroid) {
+            doc.put("centroid", it.centroid)
+        }
+        if (it.'point-0.0001') {
+            doc.put("point-0.0001", it.'point-0.0001')
+        }
+        if (it.longitude) {
+            doc.put("longitude", it.longitude)
+        }
+        if (it.latitude) {
+            doc.put("latitude", it.latitude)
+        }
+        def fieldsRF = grailsApplication.config.regionFeaturedLayerFields.split(",").findAll { !it.isEmpty() }
+        if (fieldsRF) {
+            fieldsRF.each { field ->
+                if (it."${field}_s") {
+                    doc.put(field+"_s", it."${field}_s")
+                }
+            }
+        }
+        return doc
     }
 }
