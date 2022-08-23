@@ -1021,7 +1021,7 @@ class ImportService {
                     def capitaliser = TitleCapitaliser.create(grailsApplication.config.commonNameDefaultLanguage)
                     def doc = [:]
                     doc["id"] = UUID.randomUUID().toString() // doc key
-                    doc["idxtype"] = IndexDocType.TAXON // required field - should be IndexDocType.COMMON??? RR ****
+                    doc["idxtype"] = IndexDocType.TAXON.name() //PATCH //required field - should be IndexDocType.COMMON??? RR ****
                     doc["guid"] = "ALA_${item.name?.replaceAll("[^A-Za-z0-9]+", "_")}" // replace non alpha-numeric chars with '_' - required field
                     doc["datasetID"] = drUid
                     doc["datasetName"] = "Conservation list for ${SolrFieldName}"
@@ -1345,7 +1345,7 @@ class ImportService {
             //vernacularName = capitaliser.capitalise(vernacularName) //do not change provided capitalisation
             def doc = [:]
             doc["id"] = UUID.randomUUID().toString() // doc key
-            doc["idxtype"] = IndexDocType.COMMON // required field
+            doc["idxtype"] = IndexDocType.COMMON.name() //ALA patch required field
             doc["guid"] = doc.id
             doc["taxonGuid"] = taxonID
             doc["datasetID"] = datasetID
