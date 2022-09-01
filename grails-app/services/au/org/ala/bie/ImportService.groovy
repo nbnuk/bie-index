@@ -28,6 +28,7 @@ import org.apache.commons.lang.StringEscapeUtils
 import org.apache.commons.lang.StringUtils
 import org.apache.solr.client.solrj.util.ClientUtils
 import org.apache.solr.common.params.MapSolrParams
+import org.apache.commons.httpclient.util.URIUtil
 import org.gbif.dwc.terms.*
 import org.gbif.dwca.io.Archive
 import org.gbif.dwca.io.ArchiveFactory
@@ -150,7 +151,7 @@ class ImportService {
                         importLocalities()
                         break
                     case 'occurrences':
-                        importOccurrenceData()
+                        importOccurrenceData(false)//NBN PATCH - in ALA
                         break
                     case 'regions':
                         importRegions()
@@ -255,7 +256,7 @@ class ImportService {
      * @param layer
      * @return
      */
-    private def importLayer(layer) {
+    protected def importLayer(layer) {
         log("Loading regions from layer " + layer.name)
         def keywords = []
 
@@ -548,15 +549,15 @@ class ImportService {
     }
 
     /**
-     * Removes field values from all records in index
+     * Removes field values from records in index matching the provided fq
      * @param fld
      * @throws Exception
      */
-    def clearFieldValues(String fld) throws Exception {
+    def clearFieldValues(String fld, Boolean online) throws Exception {//NBN PATCH - in ALA
         int page = 1
         int pageSize = 1000
         def js = new JsonSlurper()
-        def baseUrl = grailsApplication.config.indexOfflineBaseUrl
+        def baseUrl = online ? grailsApplication.config.indexLiveBaseUrl : grailsApplication.config.indexOfflineBaseUrl
 
         try {
             while (true) {
@@ -582,7 +583,7 @@ class ImportService {
                 }
                 if (!buffer.isEmpty()) {
                     log.info("Committing cleared fields to SOLR: #" + page.toString() + " set of " + pageSize.toString() + " records")
-                    indexService.indexBatch(buffer)
+                    indexService.indexBatch(buffer, online)
                 }
                 page++
             }
@@ -689,7 +690,7 @@ class ImportService {
      * http://bie-dev.ala.org.au/solr/bie/select?q=idxtype:TAXON+AND+taxonomicStatus:accepted&wt=json&rows=100&indent=true&sort=id+asc&cursorMark=*
      * Pagination via cursor: https://cwiki.apache.org/confluence/display/solr/Pagination+of+Results
      **/
-    def importOccurrenceData() throws Exception {
+    def importOccurrenceData(Boolean online = false) throws Exception {//NBN PATCH - in ALA
         String nationalSpeciesDatasets = grailsApplication.config.nationalSpeciesDatasets // comma separated String
         def pageSize = 10000
         def paramsMap = [
@@ -702,11 +703,30 @@ class ImportService {
                 wt: "json"
         ]
 
+        try {
+
+                clearFieldValues("occurrenceCount",  online)
+//do in super
+                if (grailsApplication.config?.additionalOccurrenceCountsJSON) {
+                    def jsonSlurper = new JsonSlurper()
+                    def AdditionalOccStats = jsonSlurper.parseText(grailsApplication.config?.additionalOccurrenceCountsJSON ?: "[]")
+                    AdditionalOccStats.each {
+                        log.info("it.solrfield = " + it.solrfield)
+                        clearFieldValues(it.solrfield,  online)
+                    }
+                }
+//end
+
+        } catch (Exception ex) {
+            log.warn "Error clearing occurrenceCounts: ${ex.message}", ex
+        }
+
+
         // first get a count of results so we can determine number of pages to process
         Map countMap = paramsMap.clone(); // shallow clone is OK
         countMap.rows = 0
         countMap.remove("cursorMark")
-        def searchCount = searchService.getCursorSearchResults(new MapSolrParams(countMap), true) // could throw exception
+        def searchCount = searchService.getCursorSearchResults(new MapSolrParams(countMap), !online) // could throw exception
         def totalDocs = searchCount?.response?.numFound?:0
         int totalPages = (totalDocs + pageSize - 1) / pageSize
         log.debug "totalDocs = ${totalDocs} || totalPages = ${totalPages}"
@@ -716,7 +736,7 @@ class ImportService {
         Queue commitQueue = new ConcurrentLinkedQueue()  // queue to put docs to be indexes
         ExecutorService executor = Executors.newSingleThreadExecutor() // consumer of queue - single blocking thread
         executor.execute {
-            indexDocInQueue(commitQueue, "initialised") // will keep polling the queue until terminated via cancel()
+            indexDocInQueue(commitQueue, "initialised", online) // will keep polling the queue until terminated via cancel()
         }
 
         // iterate over pages
@@ -724,7 +744,7 @@ class ImportService {
             try {
                 MapSolrParams solrParams = new MapSolrParams(paramsMap)
                 log.debug "${page}. paramsMap = ${paramsMap}"
-                def searchResults = searchService.getCursorSearchResults(solrParams, true) // use offline index to search
+                def searchResults = searchService.getCursorSearchResults(solrParams, !online) // use offline or online index to search
                 def resultsDocs = searchResults?.response?.docs?:[]
 
                 // buckets to group results into
@@ -778,6 +798,12 @@ class ImportService {
     def updateTaxaWithLocationInfo(List docs, Queue commitQueue) {
         def totalDocumentsUpdated = 0
 
+        def AdditionalOccStats
+        if (grailsApplication.config?.additionalOccurrenceCountsJSON) {
+            def jsonSlurper = new JsonSlurper()
+            AdditionalOccStats = jsonSlurper.parseText(grailsApplication.config?.additionalOccurrenceCountsJSON ?: "[]")
+        }
+
         docs.each { Map doc ->
             if (doc.containsKey("id") && doc.containsKey("guid") && doc.containsKey("idxtype")) {
                 Map updateDoc = [:]
@@ -787,6 +813,13 @@ class ImportService {
                 updateDoc["locatedInHubCountry"] = ["set": true]
                 if(doc.containsKey("occurrenceCount")){
                     updateDoc["occurrenceCount"] = ["set": doc["occurrenceCount"]]
+                }
+                if (grailsApplication.config?.additionalOccurrenceCountsJSON) {
+                    AdditionalOccStats.each {
+                        if (doc.containsKey(it.solrfield)) {
+                            updateDoc[it.solrfield] = ["set": doc[it.solrfield]]
+                        }
+                    }
                 }
                 commitQueue.offer(updateDoc) // throw it on the queue
                 totalDocumentsUpdated++
@@ -804,7 +837,7 @@ class ImportService {
      * @param updateDocs
      * @return
      */
-    def indexDocInQueue(Queue updateDocs, msg) {
+    def indexDocInQueue(Queue updateDocs, msg, Boolean online = false) {
         int batchSize = 1000
 
         while (isKeepIndexing || updateDocs.size() > 0) {
@@ -821,7 +854,7 @@ class ImportService {
                         }
                     }
 
-                    indexService.indexBatch(batchDocs) // index
+                    indexService.indexBatch(batchDocs, online) // index
                 } catch (Exception ex) {
                     log.warn "Error batch indexing: ${ex.message}", ex
                     log.warn "updateDocs = ${updateDocs}"
@@ -850,10 +883,16 @@ class ImportService {
         List docsWithRecs = [] // docs to index
         //log("Getting occurrence data for ${docs.size()} docs")
 
+        def AdditionalOccStats
+        if (grailsApplication.config?.additionalOccurrenceCountsJSON) {
+            def jsonSlurper = new JsonSlurper()
+            AdditionalOccStats = jsonSlurper.parseText(grailsApplication.config?.additionalOccurrenceCountsJSON ?: "[]")
+        }
+
         (0..totalPages).each { index ->
             int start = index * batchSize
-            int end = (start + batchSize < guids.size()) ? start + batchSize - 1 : guids.size()
-            log "paging biocache search - ${start} to ${end}"
+            int end = (start + batchSize < guids.size()) ? start + batchSize : guids.size() //end is exclusive, not inclusive
+            log "paging biocache search - ${start} to ${end-1}"
             def guidSubset = guids.subList(start,end)
             def guidParamList = guidSubset.collect { String guid -> ClientUtils.escapeQueryChars(guid) } // URL encode guids
             def query = "taxon_concept_lsid:" + guidParamList.join("+OR+taxon_concept_lsid:")
@@ -874,12 +913,36 @@ class ImportService {
                         // facets results are a list with key, value, key, value, etc
                         if (idx % 2 == 0) {
                             def docWithRecs = docs.find { it.guid == val }
-                            docWithRecs["occurrenceCount"] = facetCounts[idx + 1] //add the count
                             if(docWithRecs){
+                                docWithRecs["occurrenceCount"] = facetCounts[idx + 1] //add the count
                                 docsWithRecs.add(docWithRecs )
                             }
                         }
                     }
+
+                    //only try stats if there were some records (and no other breaking errors)
+                    if (grailsApplication.config?.additionalOccurrenceCountsJSON) {
+                        AdditionalOccStats.each { stats ->
+
+                            def url_stats = url + "&fq=" + stats.recordsquery
+                            //log.info("url_stats = " + url_stats)
+                            def queryResponse_stats = new URL(Encoder.encodeUrl(url_stats)).getText("UTF-8")
+                            JSONObject jsonObj_stats = JSON.parse(queryResponse_stats)
+                            if (jsonObj_stats.containsKey("facet_counts")) {
+                                def facetCounts_stats = jsonObj_stats?.facet_counts?.facet_fields?.taxon_concept_lsid
+                                facetCounts_stats.eachWithIndex { val, idx ->
+                                    // facets results are a list with key, value, key, value, etc
+                                    if (idx % 2 == 0) {
+                                        def docWithRecs = docs.find { it.guid == val }
+                                        def statsField = stats.solrfield
+                                        docWithRecs[statsField] = facetCounts_stats[idx + 1] //add the count
+                                        //no need to re-add to docsWithRecs since by-reference
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                 }
             } catch (Exception ex) {
                 log.warn "Error calling biocache SOLR: ${ex.message}", ex
@@ -958,7 +1021,7 @@ class ImportService {
                     def capitaliser = TitleCapitaliser.create(grailsApplication.config.commonNameDefaultLanguage)
                     def doc = [:]
                     doc["id"] = UUID.randomUUID().toString() // doc key
-                    doc["idxtype"] = IndexDocType.TAXON // required field
+                    doc["idxtype"] = IndexDocType.TAXON.name() //PATCH //required field - should be IndexDocType.COMMON??? RR ****
                     doc["guid"] = "ALA_${item.name?.replaceAll("[^A-Za-z0-9]+", "_")}" // replace non alpha-numeric chars with '_' - required field
                     doc["datasetID"] = drUid
                     doc["datasetName"] = "Conservation list for ${SolrFieldName}"
@@ -1213,12 +1276,21 @@ class ImportService {
                 doc['speciesSubgroup'] = []
             }
             buildTaxonRecord(core, doc, attributionMap, datasetMap, taxonRanks, defaultTaxonomicStatus, defaultDatasetName)
-
+            doc['distribution'] = []
+            doc['habitat_m_s'] = []
             if (record.hasExtension(GbifTerm.Distribution)) {
                 record.extension(GbifTerm.Distribution).each {
                     def distribution = it.value(DwcTerm.stateProvince)
                     if (distribution)
-                        doc["distribution"] = distribution
+                        doc["distribution"] <<  distribution
+                }
+            }
+
+            if (record.hasExtension(GbifTerm.SpeciesProfile)) {
+                record.extension(GbifTerm.SpeciesProfile).each {
+                    def habitat = it.value(DwcTerm.habitat)
+                    if (habitat)
+                        doc["habitat_m_s"] << habitat
                 }
             }
 
@@ -1269,11 +1341,11 @@ class ImportService {
             String organismPart = record.value(GbifTerm.organismPart)
             String taxonRemarks = record.value(DwcTerm.taxonRemarks)
             String labels = record.value(ALATerm.labels)
-            def capitaliser = TitleCapitaliser.create(language ?: defaultLanguage)
-            vernacularName = capitaliser.capitalise(vernacularName)
+            //def capitaliser = TitleCapitaliser.create(language ?: defaultLanguage)
+            //vernacularName = capitaliser.capitalise(vernacularName) //do not change provided capitalisation
             def doc = [:]
             doc["id"] = UUID.randomUUID().toString() // doc key
-            doc["idxtype"] = IndexDocType.COMMON // required field
+            doc["idxtype"] = IndexDocType.COMMON.name() //ALA patch required field
             doc["guid"] = doc.id
             doc["taxonGuid"] = taxonID
             doc["datasetID"] = datasetID
@@ -2065,6 +2137,9 @@ class ImportService {
                 update["commonNameSingle"] = [set: names.first() ]
             }
         }
+
+        nbnDenormaliseEntry(guid, update, online)
+
         def identifiers = searchService.lookupIdentifier(guid, !online)
         if (identifiers) {
             update["additionalIdentifiers"] = [set: identifiers.collect { it.guid }]
@@ -2117,6 +2192,19 @@ class ImportService {
         stack.pop()
         distribution.addAll(currentDistribution)
         return distribution
+    }
+
+    protected nbnDenormaliseEntry(guid, update, online) {
+        def synonyms = searchService.lookupSynonyms(guid, !online)
+        if (synonyms && !synonyms.isEmpty()) {
+
+            def names = new LinkedHashSet(synonyms.collect { it.scientificName })
+            def namesComplete = new LinkedHashSet(synonyms.collect { it.nameComplete })
+            if (synonyms) {
+                update["synonym"] = [set: names]
+                update["synonymComplete"] = [set: namesComplete]
+            }
+        }
     }
 
     /**
@@ -2280,5 +2368,5 @@ class ImportService {
             source = new URL(url)
         JsonSlurper slurper = new JsonSlurper()
         return slurper.parse(source)
-     }
+    }
 }

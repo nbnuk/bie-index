@@ -189,7 +189,8 @@ class ImportController {
      * @return
      */
     def importOccurrences(){
-        def job = execute("importOccurrences", "admin.button.loadoccurrence", { importService.importOccurrenceData() })
+        def online = params.getBoolean('online', false)//NBN PATCH - in ALA
+        def job = execute("importOccurrences", "admin.button.loadoccurrence", { importService.importOccurrenceData(online) })
         asJson (job.status())
 
     }
@@ -257,7 +258,7 @@ class ImportController {
         render (model as JSON)
     }
 
-    private def execute(String type, String titleCode, Closure task) {
+    protected def execute(String type, String titleCode, Closure task) {
         def title = message(code: titleCode)
         def types = type.split(',') as Set
         def job = jobService.existing(types)

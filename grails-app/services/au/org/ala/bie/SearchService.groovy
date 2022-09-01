@@ -140,7 +140,12 @@ class SearchService {
                 }
                 def nq = queryArray.join(" ")
                 log.debug "fuzzy nq = ${nq}"
-                q = "\"${q}\"^100 ${nq}"
+                if ((params?.q_op?: '') != '') {
+                    query << "q.op=${params.q_op}"
+                    //leave q unweighted
+                } else {
+                    q = "\"${q}\"^100 ${nq}"
+                }
             }
         } else {
             q = "*:*"
@@ -168,6 +173,9 @@ class SearchService {
 
         if (requestedFacets) {
             requestedFacets.each { query << "facet.field=${it}" }
+            if (params.flimit?:'') {
+                query << "facet.limit=" + params.flimit
+            }
         }
 
         //pagination params
@@ -175,7 +183,11 @@ class SearchService {
         query << "rows=${params.rows ?: params.pageSize ?: 10}"
 
         if (params.sort) {
-            query << "sort=${params.sort} ${params.dir ?: 'asc'}" // sort dir example "&sort=name asc"
+            if (params.sort2) {
+                query << "sort=${params.sort} ${params.dir ?: 'asc'}, ${params.sort2} ${params.dir2 ?: 'asc'}" //e.g. sort=rankId asc,scientificName asc
+            } else {
+                query << "sort=${params.sort} ${params.dir ?: 'asc'}" // sort dir example "&sort=name asc"
+            }
         }
 
         grailsApplication.config.solr.fq.each { query << "&fq=${it}"}
@@ -187,8 +199,10 @@ class SearchService {
             }
         }
 
+        query << "fl=*,score" //add score field
+
         String solrUlr = grailsApplication.config.indexLiveBaseUrl + "/select?" + query.join('&')
-        log.debug "SOLR URL = ${solrUlr}"
+        log.info "SOLR URL = ${solrUlr}"
         def queryResponse = new URL(Encoder.encodeUrl(solrUlr)).getText("UTF-8")
         def js = new JsonSlurper()
         def json = js.parseText(queryResponse)
@@ -438,13 +452,14 @@ class SearchService {
      * @param taxonID
      * @return
      */
-    private def lookupTaxonByName(String taxonName, Boolean useOfflineIndex = false){
+    protected def lookupTaxonByName(String taxonName, Boolean useOfflineIndex = false){
         def indexServerUrlPrefix = grailsApplication.config.indexLiveBaseUrl
         if (useOfflineIndex) {
             indexServerUrlPrefix = grailsApplication.config.indexOfflineBaseUrl
         }
         def solrServerUrl = indexServerUrlPrefix + "/select?wt=json&q=" +
-                "commonNameExact:\"" + taxonName + "\" OR scientificName:\"" + taxonName + "\" OR exact_text:\"" + taxonName + "\"" // exact_text added to handle case differences in query vs index
+                "commonNameExact:\"" + taxonName + "\" OR scientificName:\"" + taxonName + "\" OR exact_text:\"" + taxonName + "\"" + // exact_text added to handle case differences in query vs index
+                (grailsApplication.config?.solr?.bq ? "&" + grailsApplication.config.solr.bq + "&defType=dismax" : "") //use boosting if provided, since the first match will be selected which is otherwise fairly random
 
         def queryResponse = new URL(Encoder.encodeUrl(solrServerUrl)).getText("UTF-8")
         def js = new JsonSlurper()
@@ -533,7 +548,7 @@ class SearchService {
     def lookupVernacular(String taxonID, Boolean useOfflineIndex = false){
         def indexServerUrlPrefix = useOfflineIndex ? grailsApplication.config.indexOfflineBaseUrl : grailsApplication.config.indexLiveBaseUrl
         def encID = UriUtils.encodeQueryParam(taxonID, 'UTF-8')
-        def indexServerUrl = indexServerUrlPrefix+ "/select?wt=json&q=taxonGuid:%22${encID}%22&fq=idxtype:${IndexDocType.COMMON.name()}"
+        def indexServerUrl = indexServerUrlPrefix+ "/select?wt=json&q=taxonGuid:%22${encID}%22&fq=idxtype:${IndexDocType.COMMON.name()}&rows=100" //FFTF leave out in upgrade //need to specify enough rows to prevent paging
         def queryResponse = new URL(indexServerUrl).getText("UTF-8")
         def js = new JsonSlurper()
         def json = js.parseText(queryResponse)
@@ -780,7 +795,7 @@ class SearchService {
 
         //retrieve any synonyms
         def synonymQueryUrl = grailsApplication.config.indexLiveBaseUrl + "/select?wt=json&q=" +
-                "acceptedConceptID:\"" + taxon.guid + "\"" + "&fq=idxtype:" + IndexDocType.TAXON.name()
+                "acceptedConceptID:\"" + taxon.guid + "\"" + "&fq=idxtype:" + IndexDocType.TAXON.name() + "&rows=200"//FFTF leave out in upgrade
         def synonymQueryResponse = new URL(Encoder.encodeUrl(synonymQueryUrl)).getText("UTF-8")
         def js = new JsonSlurper()
         def synJson = js.parseText(synonymQueryResponse)
@@ -791,7 +806,7 @@ class SearchService {
 
         //retrieve any common names
         def commonQueryUrl = grailsApplication.config.indexLiveBaseUrl + "/select?wt=json&q=" +
-                "taxonGuid:\"" + taxon.guid + "\"" + "&fq=idxtype:" + IndexDocType.COMMON.name()
+                "taxonGuid:\"" + taxon.guid + "\"" + "&fq=idxtype:" + IndexDocType.COMMON.name() + "&rows=200"//FFTF leave out in upgrade
         def commonQueryResponse = new URL(Encoder.encodeUrl(commonQueryUrl)).getText("UTF-8")
         def commonJson = js.parseText(commonQueryResponse)
         def commonNames = commonJson.response.docs.sort { n1, n2 -> n2.priority - n1.priority }
@@ -989,6 +1004,7 @@ class SearchService {
         //get parents
         def parentGuid = taxon.parentGuid
         def stop = false
+        if (classification.any {it.guid == parentGuid} ) stop = true //NBN fix - prevent loops
 
         while(parentGuid && !stop){
             taxon = retrieveTaxon(parentGuid)
@@ -1000,6 +1016,7 @@ class SearchService {
                         guid : taxon.guid
                 ])
                 parentGuid = taxon.parentGuid
+                if (classification.any {it.guid == parentGuid} ) stop = true //NBN fix- prevent loops
             } else {
                 stop = true
             }
@@ -1058,9 +1075,12 @@ class SearchService {
         def fields = params?.fields?.split(",")?.collect({ String f -> f.trim() }) as Set
 
         // add occurrence counts
-        if(grailsApplication.config.occurrenceCounts.enabled.asBoolean()){
-            docs = populateOccurrenceCounts(docs, params)
+        if((grailsApplication.config.occurrenceCounts?.enabled?:"false").toBoolean()){
+            docs = populateOccurrenceCounts(docs, params) //this should no longer be needed since occurrenceCount value is kept up-to-date, so now turned off in the config file
         }
+
+        def jsonSlurper = new JsonSlurper()
+        def AdditionalOccStats = jsonSlurper.parseText(grailsApplication.config?.additionalOccurrenceCountsJSON ?: "[]")
 
         docs.each {
             Map doc = null
@@ -1071,7 +1091,7 @@ class SearchService {
                 if (it.commonNameSingle)
                     commonNameSingle = it.commonNameSingle
                 if (it.commonName) {
-                    commonNames = it.commonName.join(", ")
+                    commonNames = it.commonName.sort{it.capitalize()}.join(", ")
                     if (commonNameSingle.isEmpty())
                         commonNameSingle = it.commonName.first()
                 }
@@ -1109,6 +1129,13 @@ class SearchService {
                     doc.put("guid", it.acceptedConceptID)
                     doc.put("linkIdentifier", null)  // Otherwise points to the synonym
                 }
+
+                AdditionalOccStats.each { stats ->
+                    if (it.containsKey(stats.solrfield)) {
+                        doc.put(stats.solrfield, it[stats.solrfield])
+                    }
+                }
+
 
                 if (it.image) {
                     doc.put("image", it.image)
@@ -1149,6 +1176,8 @@ class SearchService {
                         "infoSourceName" : it.datasetName,
                         "infoSourceURL" : "${grailsApplication.config.collectoryBaseUrl}/public/show/${it.datasetID}"
                 ]
+            } else if (it.idxtype == "REGIONFEATURED"){
+                doc = nbnBuildRegionFeaturedDoc(it)
             } else {
                 doc = [
                         id            : it.id,
@@ -1326,21 +1355,24 @@ class SearchService {
 
         if (guids.size() > 0) {
             try {
-                def url = "${grailsApplication.config.biocacheService.baseUrl}/occurrences/taxaCount"
-                Map params = [:]
-                params.put("guids", guids.join(","))
-                params.put("separator", ",")
+                def guids_chunked = guids.collate(50) //to avoid HTTP error 414 URL too long
+                guids_chunked.each { guid_set ->
+                    def url = "${grailsApplication.config.biocacheService.baseUrl}/occurrences/taxaCount"
+                    Map params = [:]
+                    params.put("guids", guid_set.join(","))
+                    params.put("separator", ",")
 
-                //check for a biocache query context
-                if (requestParams?.bqc){
-                    params.put("fq", requestParams.bqc)
-                }
+                    //check for a biocache query context
+                    if (requestParams?.bqc) {
+                        params.put("fq", requestParams.bqc)
+                    }
 
-                Map results = doPostWithParams(url, params) // returns (JsonObject) Map with guid as key and count as value
-                Map guidsCountsMap = results.get("resp")?:[:]
-                docs.each {
-                    if (it.idxtype == IndexDocType.TAXON.name() && it.guid && guidsCountsMap.containsKey(it.guid))
-                        it.put("occurrenceCount", guidsCountsMap.get(it.guid))
+                    Map results = doPostWithParams(url, params) // returns (JsonObject) Map with guid as key and count as value
+                    Map guidsCountsMap = results.get("resp") ?: [:]
+                    docs.each {
+                        if (it.idxtype == IndexDocType.TAXON.name() && it.guid && guidsCountsMap.containsKey(it.guid))
+                            it.put("occurrenceCount", guidsCountsMap.get(it.guid))
+                    }
                 }
             } catch (Exception ex) {
                 // do nothing but log it
@@ -1380,5 +1412,44 @@ class SearchService {
             additionalResultFields = fields.collect { it }
         }
         additionalResultFields
+    }
+
+    private nbnBuildRegionFeaturedDoc(it) {
+        doc = [
+                id              : it.id,
+                guid            : it.guid,
+                linkIdentifier  : it.linkIdentifier,
+                idxtype         : it.idxtype,
+                name            : it.name,
+                description     : it.description,
+                occurrenceCount : it.occurrenceCount
+        ]
+
+        doc.put("speciesCount", it.speciesCount?it.speciesCount:0)
+
+        if (it.taxonGuid) {
+            doc.put("taxonGuid", it.taxonGuid)
+        }
+        if (it.centroid) {
+            doc.put("centroid", it.centroid)
+        }
+        if (it.'point-0.0001') {
+            doc.put("point-0.0001", it.'point-0.0001')
+        }
+        if (it.longitude) {
+            doc.put("longitude", it.longitude)
+        }
+        if (it.latitude) {
+            doc.put("latitude", it.latitude)
+        }
+        def fieldsRF = grailsApplication.config.regionFeaturedLayerFields.split(",").findAll { !it.isEmpty() }
+        if (fieldsRF) {
+            fieldsRF.each { field ->
+                if (it."${field}_s") {
+                    doc.put(field+"_s", it."${field}_s")
+                }
+            }
+        }
+        return doc
     }
 }
