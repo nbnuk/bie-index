@@ -1415,7 +1415,7 @@ class SearchService {
     }
 
     private nbnBuildRegionFeaturedDoc(it) {
-        doc = [
+        Map doc = [
                 id              : it.id,
                 guid            : it.guid,
                 linkIdentifier  : it.linkIdentifier,
