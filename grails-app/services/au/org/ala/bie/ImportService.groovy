@@ -364,7 +364,7 @@ class ImportService implements GrailsConfigurationAware {
      * @param layer
      * @return
      */
-    private def importLayer(layer, boolean online) {
+    protected def importLayer(layer, boolean online) {
         log("Loading regions from layer " + layer.name)
 
         def file = layerService.getRegions(layer.id)
@@ -1221,12 +1221,14 @@ class ImportService implements GrailsConfigurationAware {
                 doc['speciesSubgroup'] = []
             }
             buildTaxonRecord(core, doc, attributionMap, datasetMap, taxonRanks, defaultTaxonomicStatus, defaultDatasetName)
+            doc['distribution'] = []
+            doc['habitat_m_s'] = []
 
             if (record.hasExtension(GbifTerm.Distribution)) {
                 record.extension(GbifTerm.Distribution).each {
                     def distribution = it.value(DwcTerm.stateProvince)
                     if (distribution)
-                        doc["distribution"] = distribution
+                        doc["distribution"] << distribution
                 }
             }
 
@@ -1282,8 +1284,8 @@ class ImportService implements GrailsConfigurationAware {
             def provenanceList = provenance?.split("\\|").collect({ it.trim() })
             String labels = record.value(ALATerm.labels)
             def priority = status?.priority ?: commonStatus.priority
-            def capitaliser = TitleCapitaliser.create(language ?: commonNameDefaultLanguage)
-            vernacularName = capitaliser.capitalise(vernacularName)
+            //def capitaliser = TitleCapitaliser.create(language ?: commonNameDefaultLanguage)
+            //vernacularName = capitaliser.capitalise(vernacularName)
             def doc = [:]
             doc["id"] = UUID.randomUUID().toString() // doc key
             doc["idxtype"] = IndexDocType.COMMON.name() // required field
@@ -2242,6 +2244,9 @@ class ImportService implements GrailsConfigurationAware {
             update["commonNameExact"] = [set: names]
             update["commonNameSingle"] = [set: single ]
         }
+
+        nbnDenormaliseEntry(guid, update, online)
+
         def identifiers = searchService.lookupIdentifier(guid, !online)
         if (identifiers) {
             update["additionalIdentifiers"] = [set: identifiers.collect { it.guid }]
@@ -2268,6 +2273,19 @@ class ImportService implements GrailsConfigurationAware {
         stack.pop()
         distribution.addAll(currentDistribution)
         return distribution
+    }
+
+    protected nbnDenormaliseEntry(guid, update, online) {
+        def synonyms = searchService.lookupSynonyms(guid, !online)
+        if (synonyms && !synonyms.isEmpty()) {
+
+            def names = new LinkedHashSet(synonyms.collect { it.scientificName })
+            def namesComplete = new LinkedHashSet(synonyms.collect { it.nameComplete })
+            if (synonyms) {
+                update["synonym"] = [set: names]
+                update["synonymComplete"] = [set: namesComplete]
+            }
+        }
     }
 
     def buildFavourites(boolean online) throws Exception {

@@ -1,6 +1,6 @@
 ---
 grails:
-  profile: web
+  profile: web-plugin
   config:
     locations:
       - file:///data/bie-index/config/bie-index-config.properties

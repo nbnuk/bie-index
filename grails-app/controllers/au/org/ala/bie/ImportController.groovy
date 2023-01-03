@@ -320,7 +320,7 @@ class ImportController {
         render (model as JSON)
     }
 
-    private def execute(String type, String titleCode, Closure task) {
+    protected def execute(String type, String titleCode, Closure task) {
         def title = message(code: titleCode)
         def types = type.split(',') as Set
         def job = jobService.existing(types)
