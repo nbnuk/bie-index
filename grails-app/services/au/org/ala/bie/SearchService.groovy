@@ -8,6 +8,7 @@ import org.apache.solr.client.solrj.response.FacetField
 import org.apache.solr.common.SolrDocument
 import org.apache.solr.common.params.MapSolrParams
 import org.gbif.nameparser.PhraseNameParser
+import groovy.json.JsonSlurper
 
 import java.text.MessageFormat
 
@@ -141,7 +142,7 @@ class SearchService {
             q = "*:*"
             queryTitle = "all records"
         }
-        def response = indexService.search(true, q, fqs, requestedFacets, start, rows, params.sort2?:params.sort, params.sort2?params.dir2:params.dir)
+        def response = indexService.search(true, q, fqs, requestedFacets, start, rows, params.sort, params.dir, params.sort2, params.dir2)
 
         if (response.results.numFound as Integer == 0) {
 
@@ -430,7 +431,7 @@ class SearchService {
         taxonID = Encoder.escapeSolr(taxonID)
         vernacularName = Encoder.escapeSolr(vernacularName)
         language = Encoder.escapeSolr(language)
-        def response = indexService.query(!useOfflineIndex, "taxonGuid:\"${taxonID}\"", [ "idxtype:${ IndexDocType.COMMON.name() }", "name:\"${vernacularName}\"", "language:\"${language}\"" ], 1, 0)
+        def response = indexService.query(!useOfflineIndex, "taxonGuid:\"${taxonID}\"", [ "idxtype:${ IndexDocType.COMMON.name() }", "name:\"${vernacularName}\"", "language:\"${language}\"" ], 100, 0)
         return response.results.isEmpty() ? null : response.results.get(0)
     }
 
@@ -913,6 +914,7 @@ class SearchService {
         def parentGuid = taxon.parentGuid
         def seen = [] as Set
         def stop = false
+        if (classification.any {it.guid == parentGuid} ) stop = true //NBN prevent loops
 
         while(parentGuid && !stop){
             taxon = retrieveTaxon(parentGuid)
@@ -925,6 +927,7 @@ class SearchService {
                 ])
                 seen.add(taxon.guid)
                 parentGuid = taxon.parentGuid
+                if (classification.any {it.guid == parentGuid} ) stop = true //NBN prevent loops
             } else {
                 stop = true
             }
@@ -1050,6 +1053,8 @@ class SearchService {
                         "infoSourceName" : it.datasetName,
                         "infoSourceURL" : "${grailsApplication.config.collectory.base}/public/show/${it.datasetID}"
                 ]
+            } else if (it.idxtype == "REGIONFEATURED"){
+                doc = nbnBuildRegionFeaturedDoc(it)
             } else if (it.idxtype == IndexDocType.COMMON.name()) {
                 doc = [
                         "id"                 : it.id, // needed for highlighting
@@ -1183,10 +1188,15 @@ class SearchService {
                 guids.add(it.guid)
             }
         }
-        def counts = biocacheService.counts(guids)
-        docs.each {
-            if (it.idxtype == IndexDocType.TAXON.name() && it.guid && counts.containsKey(it.guid))
-                it.put("occurrenceCount", counts.get(it.guid))
+
+        def guids_chunked = guids.collate(50) //to avoid HTTP error 414 URL too long
+
+        guids_chunked.each { guid_set ->
+            def counts = biocacheService.counts(guid_set, [requestParams.bqc]) //NBN fixed ALA code. ALA forgot about bqc (querycontext), which we need for hubs
+            docs.each {
+                if (it.idxtype == IndexDocType.TAXON.name() && it.guid && counts.containsKey(it.guid))
+                    it.put("occurrenceCount", counts.get(it.guid))
+            }
         }
         docs
     }
@@ -1210,5 +1220,44 @@ class SearchService {
             additionalResultFields = fields.collect { it }
         }
         additionalResultFields
+    }
+
+    private nbnBuildRegionFeaturedDoc(it) {
+        Map doc = [
+                id              : it.id,
+                guid            : it.guid,
+                linkIdentifier  : it.linkIdentifier,
+                idxtype         : it.idxtype,
+                name            : it.name,
+                description     : it.description,
+                occurrenceCount : it.occurrenceCount
+        ]
+
+        doc.put("speciesCount", it.speciesCount?it.speciesCount:0)
+
+        if (it.taxonGuid) {
+            doc.put("taxonGuid", it.taxonGuid)
+        }
+        if (it.centroid) {
+            doc.put("centroid", it.centroid)
+        }
+        if (it.'point-0.0001') {
+            doc.put("point-0.0001", it.'point-0.0001')
+        }
+        if (it.longitude) {
+            doc.put("longitude", it.longitude)
+        }
+        if (it.latitude) {
+            doc.put("latitude", it.latitude)
+        }
+        def fieldsRF = grailsApplication.config.regionFeaturedLayerFields.split(",").findAll { !it.isEmpty() }
+        if (fieldsRF) {
+            fieldsRF.each { field ->
+                if (it."${field}_s") {
+                    doc.put(field+"_s", it."${field}_s")
+                }
+            }
+        }
+        return doc
     }
 }
