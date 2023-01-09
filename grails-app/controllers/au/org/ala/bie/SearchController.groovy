@@ -749,7 +749,7 @@ class SearchController implements GrailsConfigurationAware {
             asJson([searchResults: results])
         } catch (Exception e){
             log.error(e.getMessage(), e)
-            render(["error": e.getMessage(), indexServer: grailsApplication.config.indexLiveBaseUrl] as JSON)
+            render(["error": e.getMessage(), indexServer: grailsApplication.config.solr.live.connection] as JSON)
         }
     }
 

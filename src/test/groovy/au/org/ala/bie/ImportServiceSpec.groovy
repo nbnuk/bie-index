@@ -44,7 +44,7 @@ class ImportServiceSpec extends Specification implements ServiceUnitTest<ImportS
     @Ignore("This can be used for debugging to trace the load images service")
     def testImportImage() {
         when:
-        grailsApplication.config.indexOfflineBaseUrl = "http://localhost:8983/solr/bie-offline"
+        grailsApplication.config.solr.offline.connection = "http://localhost:8983/solr/bie-offline"
         grailsApplication.config.biocache.solr.url = "http://ala-rufus.it.csiro.au/solr/biocache"
         grailsApplication.config.speciesList.url = "http://lists.ala.org.au/ws/speciesListItems/"
         grailsApplication.config.speciesList.params = "?includeKVP=true"
