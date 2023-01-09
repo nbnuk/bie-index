@@ -2596,7 +2596,7 @@ class ImportService implements GrailsConfigurationAware {
      * @param value The value to set it to (usually null)
      * @param online True if the online index is to be used
      */
-    private clearField(String field, Object value, boolean online) {
+    protected clearField(String field, Object value, boolean online, List fq=[]) {
         int pageSize = BATCH_SIZE
         int processed = 0
         int lastReported = 0
@@ -2607,7 +2607,7 @@ class ImportService implements GrailsConfigurationAware {
             def response = indexService.query(online, "${field}:*", [], 1)
             int total = response.results.numFound
             while (total > 0 && prevCursor != cursor) {
-                response = indexService.query(online, "${field}:*", [], pageSize, null, null, "id", "asc", cursor)
+                response = indexService.query(online, "${field}:*", fq, pageSize, null, null, "id", "asc", cursor)
                 def buffer = []
 
                 response.results.each { doc ->
