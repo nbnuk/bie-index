@@ -229,7 +229,7 @@ class IndexService implements GrailsConfigurationAware {
      *
      * @return
      */
-    QueryResponse search(boolean online, String q, List fqs = [], List facets = [], Integer start = 0, Integer rows = 10, sort = null, dir = SolrQuery.ORDER.asc) {
+    QueryResponse search(boolean online, String q, List fqs = [], List facets = [], Integer start = 0, Integer rows = 10, sort = null, dir = SolrQuery.ORDER.asc, sort2 = null, dir2 = SolrQuery.ORDER.asc) {
         SolrQuery query = searchTemplate.getCopy()
 
         query.query = q
@@ -248,6 +248,9 @@ class IndexService implements GrailsConfigurationAware {
             query.rows = rows
         if (sort)
             query.sort = new SolrQuery.SortClause(sort, dir)
+        if (sort2)
+            query.addSort(new SolrQuery.SortClause(sort2, dir2))
+
         return this.query(query, online)
     }
 
