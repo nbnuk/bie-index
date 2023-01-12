@@ -172,7 +172,7 @@ class IndexService implements GrailsConfigurationAware {
         def query = new SolrQuery(q)
 
         if (context) {
-            query.add(context(context))
+            query.add(computeContext(context))
         }
         if (fq) {
             fq.each { query.addFilterQuery(it) }
@@ -204,12 +204,12 @@ class IndexService implements GrailsConfigurationAware {
      * @param context
      * @return
      */
-    SolrParams context(String context) {
+    SolrParams computeContext(String context) {
         if (!context)
             return null
         ModifiableSolrParams params = context.split('(?<!\\\\)&').inject(new ModifiableSolrParams(), { sedd, param ->
             def kv = param.split('=', 2)
-            seed.add(kv[0], kv[1])
+            sedd.add(kv[0], kv[1])
             sedd
         })
         return params
@@ -272,7 +272,7 @@ class IndexService implements GrailsConfigurationAware {
         query.setRequestHandler('/suggest')
         query.set('suggest.q', q)
         if (context)
-            query.add(context(context))
+            query.add(computeContext(context))
         if (idxtype)
             query.set('suggest.cfq', idxtype)
         if (rows)
