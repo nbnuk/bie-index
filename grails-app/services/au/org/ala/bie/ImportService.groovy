@@ -1232,6 +1232,14 @@ class ImportService implements GrailsConfigurationAware {
                 }
             }
 
+            if (record.hasExtension(GbifTerm.SpeciesProfile)) {
+                record.extension(GbifTerm.SpeciesProfile).each {
+                    def habitat = it.value(DwcTerm.habitat)
+                    if (habitat)
+                        doc["habitat_m_s"] << habitat
+                }
+            }
+
             buffer << doc
             counter++
             if (buffer.size() >= BUFFER_SIZE) {
