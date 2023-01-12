@@ -970,7 +970,7 @@ class SearchService {
         def fields = params?.fields?.split(",")?.collect({ String f -> f.trim() }) as Set
 
         // add occurrence counts
-        if(grailsApplication.config.biocache.occurrenceCount.enabled as Boolean){
+        if(grailsApplication.config.biocache.occurrenceCount.enabled){
             docs = populateOccurrenceCounts(docs, params)
         }
 
@@ -1192,7 +1192,7 @@ class SearchService {
         def guids_chunked = guids.collate(50) //to avoid HTTP error 414 URL too long
 
         guids_chunked.each { guid_set ->
-            def counts = biocacheService.counts(guid_set, [requestParams.bqc]) //NBN fixed ALA code. ALA forgot about bqc (querycontext), which we need for hubs
+            def counts = biocacheService.counts(guid_set, requestParams.bqc?[requestParams.bqc]:[]) //NBN fixed ALA code. ALA forgot about bqc (querycontext), which we need for hubs
             docs.each {
                 if (it.idxtype == IndexDocType.TAXON.name() && it.guid && counts.containsKey(it.guid))
                     it.put("occurrenceCount", counts.get(it.guid))
