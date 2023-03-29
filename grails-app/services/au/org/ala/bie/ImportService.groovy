@@ -878,6 +878,12 @@ class ImportService implements GrailsConfigurationAware {
                     }
                 }
 
+                //BEGIN NBN
+                if (!taxonDoc && item.name) {
+                    taxonDoc = searchService.lookupTaxonByName(item.name, null,true) // TODO cache call
+                }
+                //END NBN
+
                 if (taxonDoc) {
                     // do a SOLR doc (atomic) update
                     def doc = [:]
