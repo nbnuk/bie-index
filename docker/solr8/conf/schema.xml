@@ -23,12 +23,14 @@
         <filter class="solr.SynonymFilterFactory" synonyms="index_synonyms.txt" ignoreCase="true" expand="false"/>
         -->
         <filter class="solr.LowerCaseFilterFactory"/>
+        <filter class="solr.StemmerOverrideFilterFactory" dictionary="stemdict.txt" /> <!-- RR new Mar 2020 for BBG -->
       </analyzer>
       <analyzer type="query">
         <tokenizer class="solr.StandardTokenizerFactory"/>
         <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" />
-        <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+        <!-- <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/> --> <!-- RR Mar 2020: not used -->
         <filter class="solr.LowerCaseFilterFactory"/>
+        <filter class="solr.StemmerOverrideFilterFactory" dictionary="stemdict.txt" /> <!-- RR new Mar 2020 for BBG -->
       </analyzer>
     </fieldType>    
 
@@ -341,7 +343,7 @@
    <field name="taxonGuid" type="string" indexed="true" stored="true" required="false" multiValued="false"/>
    <field name="parentGuid" type="string" indexed="true" stored="true" omitNorms="true" />
    <field name="otherGuid" type="string" indexed="true" stored="true" required="false" multiValued="true"/>
-   <field name="synonym" type="string" indexed="true" stored="true" multiValued="true" omitNorms="false" />
+   <field name="synonym" type="text" indexed="true" stored="true" multiValued="true" omitNorms="false" />
    <field name="nomenclaturalCode" type="lowercase" indexed="true" stored="true" omitNorms="true" />
    <field name="scientificName" type="lowercase" indexed="true" stored="true" omitNorms="false" />
    <field name="scientificNameAuthorship" type="lowercase" indexed="true" stored="true" omitNorms="false" />
@@ -434,7 +436,7 @@
   
    <!--  NC:2013-02-08 remove the omitTermFreqAndPositions because this setting will cause an exception when searching for a phrase -->
    <field name="stopped_common_name" type="stopped_common_name" indexed="true" stored="false" multiValued="true" omitNorms="true" />
-   <field name="name_complete" type="name_complete" indexed="true" stored="false" multiValued="true" omitNorms="true" omitTermFreqAndPositions="true"/>
+   <field name="name_complete" type="name_complete" indexed="true" stored="false" multiValued="false" omitNorms="true" omitTermFreqAndPositions="false"/>
    
    <!-- Fields used to rank exact matches higher -->
    <field name="exact_text" type="lowercase" indexed="true" stored="false" omitNorms="true" multiValued="true"/>
@@ -481,6 +483,19 @@
         unknown fields indexed and/or stored by default -->
    <!--dynamicField name="*" type="ignored" multiValued="true" /-->
 
+
+   <!-- NBN additional fields -->
+   <field name="synonymComplete" type="name_complete" indexed="true" stored="true" multiValued="true" omitNorms="false" /> <!-- RR 20200114 was string -->
+   <field name="speciesCount" type="int" indexed="true" stored="true" multiValued="false" omitNorms="true" />
+   <!-- RR Feb 2020 for BBG -->
+   <field name="bbg_name_s" type="string" indexed="true" stored="true" multiValued="false" /> <!-- was text RR if not explicitly named, then a string -->
+   <field name="point-0.0001" type="string" indexed="true" stored="true" omitNorms="true" />
+   <field name="longitude" type="tdouble" indexed="true" stored="true" multiValued="false" />
+   <field name="latitude" type="tdouble" indexed="true" stored="true" multiValued="false" />
+
+   <field name="bbg_auto_text" type="auto_text" indexed="true" stored="true" multiValued="true" omitNorms="true" omitTermFreqAndPositions="true"/>
+   <!-- End NBN additional fields -->
+
  </fields>
 
  <!-- Field to use to determine and enforce document uniqueness.
@@ -512,6 +527,9 @@
    <copyField source="category_*" dest="text"/>
    <copyField source="conservationStatus" dest="text"/>
 
+   <!-- NBN added -->
+   <copyField source="bbg_name_s" dest="text"/> <!-- RR new Mar 2020 -->
+
    <!-- doc_name is a field used to to search for any document by its name or title via Boost Query -->
    <copyField source="name" dest="doc_name"/>
    <copyField source="nameComplete" dest="doc_name"/>
@@ -525,7 +543,12 @@
    <copyField source="acronym" dest="exact_text"/>
    <copyField source="scientificName" dest="exact_text"/>
    <copyField source="commonNameExact" dest="exact_text"/>
-   
+
+   <!-- NBN added -->
+   <copyField source="bbg_name_s" dest="exact_text"/> <!-- RR new Aug 2019 -->
+
+   <copyField source="bbg_name_s" dest="bbg_auto_text"/> <!-- KR add to updated suggest -->
+
    <copyField source="scientificName" dest="concat_name"/>
    
    <copyField source="commonName" dest="concat_name"/>
