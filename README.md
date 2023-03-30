@@ -439,3 +439,5 @@ Each list can contain
 
 Favourites only mark selected taxa and their associated common names with favourite terms.
 Once marked, it is up to the bie-plugin otr weighting rules to make use of these terms.
+
+1
