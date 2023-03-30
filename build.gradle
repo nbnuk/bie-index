@@ -114,7 +114,7 @@ dependencies {
     }
 
     compile "org.grails.plugins:grails-spring-websocket:2.3.0"
-    compile group: "au.org.ala", name: "ala-name-matching-model", version:"4.2-NBN-0-0-0-SNAPSHOT"
+    compile group: "au.org.ala", name: "ala-name-matching-model", version:"4.2-NBN-0-0-1"
     compile "org.jsoup:jsoup:1.8.3"
     compile 'net.sf.opencsv:opencsv:2.3'
     compile "org.apache.solr:solr-solrj:8.1.0"
