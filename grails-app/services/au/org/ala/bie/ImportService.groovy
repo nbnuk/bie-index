@@ -853,6 +853,15 @@ class ImportService implements GrailsConfigurationAware {
             def buffer = []
             def unmatchedTaxaCount = 0
 
+            //BEGIN NBN
+            def listName;
+            if(jsonFieldName == "*")
+            {
+                def listInfo = listService.getInfo(drUid)
+                listName = listInfo?.listName ?: drUid
+            }
+            //END NBN
+
             updateProgressBar2(100, 0)
             log("Updating taxa with ${solrFieldName}")
             list.eachWithIndex { item, i ->
@@ -890,8 +899,8 @@ class ImportService implements GrailsConfigurationAware {
                     doc["id"] = taxonDoc.id // doc key
                     doc["idxtype"] = ["set": taxonDoc.idxtype] // required field
                     doc["guid"] = ["set": taxonDoc.guid] // required field
-                    def fieldValue = item[jsonFieldName]
-                    doc[solrFieldName] = ["set": fieldValue] // "set" lets SOLR know to update record
+                    def fieldValue = listName ?: item[jsonFieldName]
+                    doc[solrFieldName] = ["add": fieldValue] // "set" lets SOLR know to update record - NBN changed to add to not overwrite
                     log.debug "adding to doc = ${doc}"
                     buffer << doc
                 } else {
@@ -908,7 +917,7 @@ class ImportService implements GrailsConfigurationAware {
                     doc["status"] = legislatedStatus?.status ?: "legislated"
                     doc["priority"] = legislatedStatus?.priority ?: 500
                     // set conservationStatus facet
-                    def fieldValue = item[jsonFieldName]
+                    def fieldValue = listName ?: item[jsonFieldName]
                     doc[solrFieldName] = fieldValue
                     log.info "New name doc = ${doc}"
                     buffer << doc
