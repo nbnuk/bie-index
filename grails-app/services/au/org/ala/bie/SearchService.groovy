@@ -131,10 +131,9 @@ class SearchService {
                 def queryArray = qs.split(/\s+/).findAll({ it.length() > 5}).collect({ it + "~0.8"})
                 def nq = queryArray.join(" ")
                 log.debug "fuzzy nq = ${nq}"
-                if ((params?.q_op?: '') != '') {
-                    query << "q.op=${params.q_op}"
-                    //leave q unweighted
-                } else {
+
+                //NBN leave q unweighted if q.op specified
+                if ((params?.q_op?: '') == '') {
                     q = "\"${q}\"^100 ${nq}"
                 }
             }
@@ -142,7 +141,7 @@ class SearchService {
             q = "*:*"
             queryTitle = "all records"
         }
-        def response = indexService.search(true, q, fqs, requestedFacets, start, rows, params.sort, params.dir, params.sort2, params.dir2)
+        def response = indexService.search(true, q, fqs, requestedFacets, start, rows, params.sort, params.dir, params.sort2, params.dir2, params?.q_op)
 
         if (response.results.numFound as Integer == 0) {
 
@@ -154,7 +153,7 @@ class SearchService {
                 if (parsedName && parsedName.canonicalName()) {
                     def canonical = parsedName.canonicalName()
                     // TODO test if this breaks paginating through results... looks like it will
-                    response = indexService.search(true, "scientificName:\"${canonical}\"", fqs, requestedFacets, start, rows, params.sort, params.dir)
+                    response = indexService.search(true, "scientificName:\"${canonical}\"", fqs, requestedFacets, start, rows, params.sort, params.dir, , params?.q_op)
                 }
             } catch(Exception e){
                 //expected behaviour for non scientific name matches
