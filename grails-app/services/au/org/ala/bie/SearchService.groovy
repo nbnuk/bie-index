@@ -153,7 +153,7 @@ class SearchService {
                 if (parsedName && parsedName.canonicalName()) {
                     def canonical = parsedName.canonicalName()
                     // TODO test if this breaks paginating through results... looks like it will
-                    response = indexService.search(true, "scientificName:\"${canonical}\"", fqs, requestedFacets, start, rows, params.sort, params.dir, , params?.q_op)
+                    response = indexService.search(true, "scientificName:\"${canonical}\"", fqs, requestedFacets, start, rows, params.sort, params.dir)
                 }
             } catch(Exception e){
                 //expected behaviour for non scientific name matches
