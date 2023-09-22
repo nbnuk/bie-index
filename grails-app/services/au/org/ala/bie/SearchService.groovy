@@ -141,7 +141,7 @@ class SearchService {
             q = "*:*"
             queryTitle = "all records"
         }
-        def response = indexService.search(true, q, fqs, requestedFacets, start, rows, params.sort, params.dir, params.sort2, params.dir2, params?.q_op)
+        def response = indexService.search(true, q, fqs, requestedFacets, start, rows, params.sort, params.dir, params.sort2, params.dir2, params?.q_op, params.getInt("flimit"))
 
         if (response.results.numFound as Integer == 0) {
 
