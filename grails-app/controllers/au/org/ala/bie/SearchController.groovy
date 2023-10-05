@@ -434,7 +434,7 @@ class SearchController implements GrailsConfigurationAware {
     @Produces("application/json")
     def taxon(){
         def guid = regularise(params.id)
-        log.warn(guid)
+
         def locales = [request.locale, defaultLocale]
         if(guid == 'favicon') return; //not sure why this is happening....
         if(!guid){
