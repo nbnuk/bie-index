@@ -659,7 +659,7 @@ class ImportService implements GrailsConfigurationAware {
             listNum++
             this.updateProgressBar(lists.size(), listNum)
             String uid = resource.uid
-            String solrField = resource.field ?: "conservationStatus_s"
+            String solrField = resource.field ?: ["conservationStatus"]
             String sourceField = resource.sourceField ?: defaultSourceField
             String kingdomField = resource.kingdomField ?: defaultKingdomField
             String phylumField = resource.phylumField ?: defaultPhylumField
@@ -667,11 +667,12 @@ class ImportService implements GrailsConfigurationAware {
             String orderField = resource.orderField ?: defaultOrderField
             String familyField = resource.familyField ?: defaultFamilyField
             String rankField = resource.rankField ?: defaultRankField
-             if (uid && solrField) {
+            List fields = resource.fields
+            if (uid && solrField) {
                 log("Loading list from: " + uid)
                 try {
                     def list = listService.get(uid, [sourceField, kingdomField, phylumField, classField, orderField, familyField, rankField])
-                    updateDocsWithConservationStatus(list, sourceField, solrField, uid, kingdomField, phylumField, classField, orderField, familyField, rankField)
+                    updateDocsWithConservationStatus(list, sourceField, solrField, uid, kingdomField, phylumField, classField, orderField, familyField, rankField, fields)
                 } catch (Exception ex) {
                     def msg = "Error calling webservice: ${ex.message}"
                     log(msg)
@@ -847,7 +848,7 @@ class ImportService implements GrailsConfigurationAware {
      * @param solrFieldName
      * @return
      */
-    private updateDocsWithConservationStatus(List list, String jsonFieldName, String solrFieldName, String drUid, String kingdomField, String phylumField, String classField, String orderField, String familyField, String rankField) {
+    private updateDocsWithConservationStatus(List list, String jsonFieldName, String solrFieldName, String drUid, String kingdomField, String phylumField, String classField, String orderField, String familyField, String rankField, List fields) {
         if (list.size() > 0) {
             def totalDocs = list.size()
             def buffer = []
@@ -855,8 +856,7 @@ class ImportService implements GrailsConfigurationAware {
 
             //BEGIN NBN
             def listName;
-            if(jsonFieldName == "*")
-            {
+            if (jsonFieldName == "*") {
                 def listInfo = listService.getInfo(drUid)
                 listName = listInfo?.listName ?: drUid
             }
@@ -864,12 +864,12 @@ class ImportService implements GrailsConfigurationAware {
 
             updateProgressBar2(100, 0)
             log("Updating taxa with ${solrFieldName}")
-            list.eachWithIndex { item, i ->
+             list.eachWithIndex { item, i ->
                 log.debug "item = ${item}"
                 def taxonDoc
 
                 if (item.lsid) {
-                    taxonDoc = searchService.lookupTaxon(item.lsid, true)
+                    taxonDoc = searchService.lookupTaxon(item.lsid, false)
                 }
                 if (!taxonDoc && item.lsid) {
                     taxonDoc = searchService.lookupTaxonByPreviousIdentifier(item.lsid, true)
@@ -889,7 +889,7 @@ class ImportService implements GrailsConfigurationAware {
 
                 //BEGIN NBN
                 if (!taxonDoc && item.name) {
-                    taxonDoc = searchService.lookupTaxonByName(item.name, null,true) // TODO cache call
+                    taxonDoc = searchService.lookupTaxonByName(item.name, null, false) // TODO cache call
                 }
                 //END NBN
 
@@ -900,7 +900,8 @@ class ImportService implements GrailsConfigurationAware {
                     doc["idxtype"] = ["set": taxonDoc.idxtype] // required field
                     doc["guid"] = ["set": taxonDoc.guid] // required field
                     def fieldValue = listName ?: item[jsonFieldName]
-                    doc[solrFieldName] = ["add": fieldValue] // "set" lets SOLR know to update record - NBN changed to add to not overwrite
+                    updateSolrField(doc, solrFieldName, fieldValue, fields)
+                    // "set" lets SOLR know to update record - NBN changed to add to not overwrite
                     log.debug "adding to doc = ${doc}"
                     buffer << doc
                 } else {
@@ -916,9 +917,8 @@ class ImportService implements GrailsConfigurationAware {
                     doc["name"] = capitaliser.capitalise(item.name)
                     doc["status"] = legislatedStatus?.status ?: "legislated"
                     doc["priority"] = legislatedStatus?.priority ?: 500
-                    // set conservationStatus facet
                     def fieldValue = listName ?: item[jsonFieldName]
-                    doc[solrFieldName] = fieldValue
+                    updateSolrField(doc, solrFieldName, fieldValue, fields)
                     log.info "New name doc = ${doc}"
                     buffer << doc
                     log("No existing taxon found for ${item.name}, so has been added as ${doc["guid"]}")
@@ -1809,20 +1809,20 @@ class ImportService implements GrailsConfigurationAware {
      * @param preferredImagesList
      * @return
      */
-    def updateDocsWithPreferredImage(List<Map> preferredImagesList){
+    def updateDocsWithPreferredImage(List<Map> preferredImagesList) {
 
         List<String> guidList = []
 
-        preferredImagesList.each {Map guidImageMap ->
+        preferredImagesList.each { Map guidImageMap ->
             guidList.push(guidImageMap.guid)
         }
 
         String guids = guidList.join(",")
 
-        log.info ("guid List to update: " + guids)
+        log.info("guid List to update: " + guids)
 
         def paramsMap = [
-                q: "guid:\"" + guids +"\"",
+                q : "guid:\"" + guids + "\"",
                 fq: "idxtype:${IndexDocType.TAXON.name()}",
                 wt: "json"
         ]
@@ -1834,10 +1834,10 @@ class ImportService implements GrailsConfigurationAware {
         resultsDocs.each { Map doc ->
             if (doc.containsKey("id") && doc.containsKey("guid") && doc.containsKey("idxtype")) {
                 String imageId = getImageFromParamList(preferredImagesList, doc.guid)
-                log.info ("Updating: guid " + doc.guid + " with imageId " + imageId)
+                log.info("Updating: guid " + doc.guid + " with imageId " + imageId)
                 if (!doc.containsKey("image") || (doc.containsKey("image") && doc.image != imageId)) {
                     updateImage(doc, imageId, buffer, true)
-                    totalDocumentsUpdated ++
+                    totalDocumentsUpdated++
                 }
             } else {
                 log.warn "Updating doc error: missing keys ${doc}"
@@ -1847,7 +1847,7 @@ class ImportService implements GrailsConfigurationAware {
         def updatedTaxa = []
 
         if (buffer.size() > 0) {
-            log.info ("Committing to SOLR..." + guidList)
+            log.info("Committing to SOLR..." + guidList)
             indexService.indexBatch(buffer, true)
             updatedTaxa = searchService.getTaxa(guidList)
         } else {
@@ -1857,8 +1857,8 @@ class ImportService implements GrailsConfigurationAware {
         updatedTaxa
     }
 
-    private String getImageFromParamList (List<Map> preferredImagesList, String guid) {
-        return preferredImagesList.grep{it.guid == guid}.image[0]
+    private String getImageFromParamList(List<Map> preferredImagesList, String guid) {
+        return preferredImagesList.grep { it.guid == guid }.image[0]
     }
 
     /**
@@ -1902,15 +1902,15 @@ class ImportService implements GrailsConfigurationAware {
                 String guids = '"' + guidList[startInd..endInd].join('" "') + '"'
                 updateProgressBar(totalPages, page)
                 def paramsMap = [
-                        q: "guid:(" + guids + ")",
-                        fq: "idxtype:${IndexDocType.TAXON.name()}",
+                        q   : "guid:(" + guids + ")",
+                        fq  : "idxtype:${IndexDocType.TAXON.name()}",
                         rows: "${batchSize}",
-                        wt: "json"
+                        wt  : "json"
                 ]
                 MapSolrParams solrParams = new MapSolrParams(paramsMap)
                 def searchResults = searchService.getCursorSearchResults(solrParams, !online)
                 def resultsDocs = searchResults?.results ?: []
-                log.debug( "SOLR query returned ${resultsDocs.size()} docs")
+                log.debug("SOLR query returned ${resultsDocs.size()} docs")
                 resultsDocs.each { Map doc ->
                     if (doc.containsKey("id") && doc.containsKey("guid") && doc.containsKey("idxtype")) {
                         //String imageId = getImageFromParamList(preferredImagesList, doc.guid)
@@ -1920,7 +1920,7 @@ class ImportService implements GrailsConfigurationAware {
                             lastTaxon = doc.guid
                             lastImage = imageId
                             updateImage(doc, imageId, buffer, online)
-                            totalDocumentsUpdated ++
+                            totalDocumentsUpdated++
                         }
                     } else {
                         log.warn "Updating doc error: missing keys ${doc}"
@@ -1953,10 +1953,10 @@ class ImportService implements GrailsConfigurationAware {
     private updateImage(Map doc, String imageId, List buffer, boolean online) {
         def update = { d ->
             [
-                    id: d.id,
-                    idxtype: [set: d.idxtype],
-                    guid: [set: d.guid],
-                    image: ["set": imageId],
+                    id            : d.id,
+                    idxtype       : [set: d.idxtype],
+                    guid          : [set: d.guid],
+                    image         : ["set": imageId],
                     imageAvailable: ["set": true]
             ]
         }
@@ -2006,7 +2006,7 @@ class ImportService implements GrailsConfigurationAware {
                     update["id"] = doc.id // doc key
                     update["idxtype"] = [set: doc.idxtype] // required field
                     update["guid"] = [set: doc.guid] // required field
-                    update["denormalised"] = [set: false ]
+                    update["denormalised"] = [set: false]
                     doc.each { entry ->
                         def key = entry.key
                         if (key.startsWith("rk_") || key.startsWith("rkid_") || key.startsWith("commonName"))
@@ -2024,7 +2024,7 @@ class ImportService implements GrailsConfigurationAware {
                 if (!buffer.isEmpty())
                     indexService.indexBatch(buffer, online)
                 if (total > 0) {
-                    def percentage = Math.round((processed / total) * 100 )
+                    def percentage = Math.round((processed / total) * 100)
                     log("Cleared ${processed} taxa (${percentage}%)")
                 }
                 prevCursor = cursor
@@ -2040,7 +2040,7 @@ class ImportService implements GrailsConfigurationAware {
             processed = 0
             prevCursor = ""
             cursor = CursorMarkParams.CURSOR_MARK_START
-            def typeQuery = "idxtype:\"${ IndexDocType.TAXON.name() }\" AND -acceptedConceptID:* AND -parentGuid:*"
+            def typeQuery = "idxtype:\"${IndexDocType.TAXON.name()}\" AND -acceptedConceptID:* AND -parentGuid:*"
             def response = indexService.query(online, typeQuery, [], 1)
             int total = response.results.numFound
             while (prevCursor != cursor) {
@@ -2122,13 +2122,13 @@ class ImportService implements GrailsConfigurationAware {
                         def update = [:]
                         update["id"] = doc.id // doc key
                         update["idxtype"] = [set: doc.idxtype] // required field
-                        update["guid"] = [set: doc.guid ] // required field
-                        update["acceptedConceptName"] = [set: accepted.nameComplete ?: accepted.scientificName ]
+                        update["guid"] = [set: doc.guid] // required field
+                        update["acceptedConceptName"] = [set: accepted.nameComplete ?: accepted.scientificName]
 
                         buffer << update
                     }
                     processed++
-                     if (buffer.size() >= bufferLimit) {
+                    if (buffer.size() >= bufferLimit) {
                         indexService.indexBatch(buffer, online)
                         buffer.clear()
                     }
@@ -2168,8 +2168,8 @@ class ImportService implements GrailsConfigurationAware {
                         def update = [:]
                         update["id"] = doc.id // doc key
                         update["idxtype"] = [set: doc.idxtype] // required field
-                        update["guid"] = [set: doc.guid ] // required field
-                        update["acceptedConceptName"] = [set: accepted.scientificName ]
+                        update["guid"] = [set: doc.guid] // required field
+                        update["acceptedConceptName"] = [set: accepted.scientificName]
 
                         buffer << update
                     }
@@ -2213,7 +2213,7 @@ class ImportService implements GrailsConfigurationAware {
         update["id"] = doc.id // doc key
         update["idxtype"] = [set: doc.idxtype] // required field
         update["guid"] = [set: guid] // required field
-        update["denormalised"] = [set: true ]
+        update["denormalised"] = [set: true]
         update << trace
 
         if (doc.rank && doc.rankID && doc.rankID != 0) {
@@ -2261,11 +2261,11 @@ class ImportService implements GrailsConfigurationAware {
                 }
                 s
             }
-            def single = commonNames.find({ it.status != deprecatedStatus.status && (!commonLanguages || commonLanguages.contains(it.language))})?.name
+            def single = commonNames.find({ it.status != deprecatedStatus.status && (!commonLanguages || commonLanguages.contains(it.language)) })?.name
             def names = new LinkedHashSet(commonNames.collect { it.name })
             update["commonName"] = [set: names]
             update["commonNameExact"] = [set: names]
-            update["commonNameSingle"] = [set: single ]
+            update["commonNameSingle"] = [set: single]
         }
 
         nbnDenormaliseEntry(guid, update, online)
@@ -2277,7 +2277,7 @@ class ImportService implements GrailsConfigurationAware {
         def prevCursor = ""
         def cursor = CursorMarkParams.CURSOR_MARK_START
         while (cursor != prevCursor) {
-            def response = indexService.query(online, "parentGuid:\"${doc.guid}\"", [ "idxtype:\"${IndexDocType.TAXON.name()}\"", ACCEPTED_STATUS ], pageSize, null, null, "id", "asc", cursor)
+            def response = indexService.query(online, "parentGuid:\"${doc.guid}\"", ["idxtype:\"${IndexDocType.TAXON.name()}\"", ACCEPTED_STATUS], pageSize, null, null, "id", "asc", cursor)
             response.results.each { child ->
                 distribution.addAll(denormaliseEntry(child, trace, stack, speciesGroups, speciesSubGroups, buffer, bufferLimit, pageSize, online, js, speciesGroupMapping, commonLanguages, capitalisers))
             }
@@ -2324,7 +2324,7 @@ class ImportService implements GrailsConfigurationAware {
             if (uid && defaultTerm) {
                 log("Loading list from: " + uid)
                 try {
-                    def list = listService.get(uid, termField ? [ termField ] : [])
+                    def list = listService.get(uid, termField ? [termField] : [])
                     buildFavouritesList(list, termField, defaultTerm, online)
                 } catch (Exception ex) {
                     def msg = "Error calling webservice: ${ex.message}"
@@ -2347,13 +2347,13 @@ class ImportService implements GrailsConfigurationAware {
             def doc = searchService.lookupTaxon(entry.lsid, !online)
             def term = (termField ? entry[termField] : defaultTerm) ?: defaultTerm
             if (doc && term) {
-                update = [id: doc.id, idxtype: doc.idxtype, guid: doc.guid ]
-                update['favourite'] = ['set': term ]
+                update = [id: doc.id, idxtype: doc.idxtype, guid: doc.guid]
+                update['favourite'] = ['set': term]
                 buffer << update
                 processed++
                 searchService.lookupVernacular(entry.lsid, !online).each { vdoc ->
-                    update = [id: vdoc.id, idxtype: vdoc.idxtype, guid: vdoc.guid ]
-                    update['favourite'] = ['set': term ]
+                    update = [id: vdoc.id, idxtype: vdoc.idxtype, guid: vdoc.guid]
+                    update['favourite'] = ['set': term]
                     buffer << update
                     processed++
                 }
@@ -2415,7 +2415,7 @@ class ImportService implements GrailsConfigurationAware {
                             weight = 1.0;
                     }
                     def weights = weightBuilder.apply(weight, doc)
-                    weights.each { k, v -> update[k] = [set: v]}
+                    weights.each { k, v -> update[k] = [set: v] }
                     processed++
                     buffer << update
                 }
@@ -2423,7 +2423,7 @@ class ImportService implements GrailsConfigurationAware {
                     indexService.indexBatch(buffer, online)
                 if (total > 0 && (processed - lastReported) >= REPORT_INTERVAL) {
                     lastReported = processed
-                    def percentage = Math.round((processed / total) * 100 )
+                    def percentage = Math.round((processed / total) * 100)
                     log("Weighted ${processed} items (${percentage}%)")
                 }
                 prevCursor = cursor
@@ -2443,7 +2443,7 @@ class ImportService implements GrailsConfigurationAware {
      * @param online Use the online index
      */
     def buildSuggestIndex(boolean online) {
-         log("Building suggestion index")
+        log("Building suggestion index")
         try {
             def response = indexService.buildSuggestIndex(online)
             log.info(response.toString())
@@ -2610,7 +2610,7 @@ class ImportService implements GrailsConfigurationAware {
             source = new URL(url)
         JsonSlurper slurper = new JsonSlurper()
         return slurper.parse(source)
-     }
+    }
 
     /**
      * Clear a field in the index.
@@ -2619,7 +2619,7 @@ class ImportService implements GrailsConfigurationAware {
      * @param value The value to set it to (usually null)
      * @param online True if the online index is to be used
      */
-    protected clearField(String field, Object value, boolean online, List fq=[]) {
+    protected clearField(String field, Object value, boolean online, List fq = []) {
         int pageSize = BATCH_SIZE
         int processed = 0
         int lastReported = 0
@@ -2646,7 +2646,7 @@ class ImportService implements GrailsConfigurationAware {
                     indexService.indexBatch(buffer, online)
                 if (total > 0 && (processed - lastReported) >= REPORT_INTERVAL) {
                     lastReported = processed
-                    def percentage = Math.round((processed / total) * 100 )
+                    def percentage = Math.round((processed / total) * 100)
                     log("Cleared ${processed} items (${percentage}%)")
                 }
                 prevCursor = cursor
@@ -2658,4 +2658,25 @@ class ImportService implements GrailsConfigurationAware {
             log.error("Unable to setting ${field} to ${value}", ex)
         }
     }
+
+    /**
+     * Updates the document with the field value based on the solr field name configuration
+     *
+     * @param doc The document to update
+     * @param solrFieldName The configured solr field name (can be "*" for dynamic field determination)
+     * @param fieldValue The value to set
+     * @param fields The field mappings for dynamic field determination
+     */
+    private void updateSolrField(Map doc, String solrFieldName, def fieldValue, List<Map> fields) {
+    if (solrFieldName == "*") {
+        def solrFieldDeterminedName = fields.find { it.sourceValue == fieldValue }
+        if (solrFieldDeterminedName) {
+            doc.put(solrFieldDeterminedName.field, ["set": fieldValue])
+        } else {
+            log.error("No field found for source value: ${fieldValue}")
+        }
+    } else {
+        doc.put(solrFieldName, ["set": fieldValue])
+    }
+}
 }

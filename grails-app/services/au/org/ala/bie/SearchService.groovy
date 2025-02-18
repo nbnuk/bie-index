@@ -474,7 +474,7 @@ class SearchService {
         def response = indexService.query(!useOfflineIndex, "taxonGuid:\"${taxonID}\"", [ "idxtype:${ IndexDocType.IDENTIFIER.name() }" ], GET_ALL_SIZE)
         return response.results
     }
-    
+
     /**
      * Retrieve details of all name vairants attached to a taxon.
      *
@@ -730,7 +730,7 @@ class SearchService {
         // retrieve any variants
         response = indexService.query(true, "taxonGuid:\"${encGuid}\"", [ "idxtype:${IndexDocType.TAXONVARIANT.name()}"], GET_ALL_SIZE)
         def variants = response.results
-        
+
         //Dataset index
         def datasetMap = [:]
         def taxonDatasetURL = getDataset(taxon.datasetID, datasetMap)?.guid
@@ -739,11 +739,28 @@ class SearchService {
         // Conservation status map
         def clists = conservationListsSource.lists ?: []
         def conservationStatus = clists.inject([:], { ac, cl ->
-            final cs = taxon[cl.field]
+            final cs = taxon[cl.field] // i.e. taxon["conservationStatus"] = "Vulnerable"
             if (cs)
                 ac.put(cl.label, [ dr: cl.uid, status: cs ])
             ac
         })
+
+        // Conservation Priority Country map
+        def priorityList = clists.find { it.field == "*" } // This is a bit fragile, but it works for now
+        def conservationPriorityList = [:]
+        if (priorityList?.fields) {
+            priorityList.fields.each { field ->
+                // Check if this field exists in the taxon document
+                def fieldValue = taxon[field.field]
+                if (fieldValue) {
+                    // Add to the map with country name as key and status details as value
+                    conservationPriorityList.put(field.sourceValue, [
+                        dr: priorityList.uid,
+                        status: field.value
+                    ])
+                }
+            }
+        }
 
         def model = [
                 taxonConcept:[
@@ -821,6 +838,7 @@ class SearchService {
                 },
                 imageIdentifier: taxon.image,
                 conservationStatuses:conservationStatus,
+                conservationPriorityList: conservationPriorityList,
                 extantStatuses: [],
                 habitats: [],
                 categories: [],
@@ -876,7 +894,7 @@ class SearchService {
             model.taxonConcept["acceptedConceptID"] = taxon.acceptedConceptID
         if (taxon.acceptedConceptName)
             model.taxonConcept["acceptedConceptName"] = taxon.acceptedConceptName
-        
+
         if(getAdditionalResultFields()) {
             def doc = [:]
             getAdditionalResultFields().each { field ->
@@ -887,7 +905,7 @@ class SearchService {
 
             model << doc
         }
-        
+
         model
     }
 

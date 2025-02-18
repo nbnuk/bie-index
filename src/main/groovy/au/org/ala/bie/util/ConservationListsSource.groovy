@@ -20,7 +20,9 @@ class ConservationListsSource {
     def defaultOrderField = 'order'
     def defaultFamilyField = 'family'
     def defaultRankField = 'rank'
+    def defaultDesignationField = 'Designation'
     def lists = []
+    def fields = []
 
     /**
      * Create from a JSON URL
@@ -43,6 +45,7 @@ class ConservationListsSource {
             defaultFamilyField = config?.defaultFamilyField ?: 'family'
             defaultRankField = config?.defaultRankField ?: 'rank'
             lists = config?.lists ?: []
+            fields = config?.fields ?: []
             log.info("Loaded " + lists.size() + " lists")
         } catch (Exception ex) {
             log.error("Unable to inifialise conservation status source from " + url, ex)
