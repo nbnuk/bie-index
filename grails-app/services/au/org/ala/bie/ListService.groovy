@@ -17,7 +17,7 @@ class ListService {
      */
     def get(uid, List fields = []) {
         boolean hasAnotherPage = true
-        int max = 10000
+        int max = 400
         int offset = 0
 
         def items = []
@@ -27,13 +27,10 @@ class ListService {
 
             def slurper = new JsonSlurper()
             def json = slurper.parseText(url.getText('UTF-8'))
-            if (json) {
-                items.addAll(json)
-                hasAnotherPage = items.size() <= max  // If we got a full page, there might be more
-            } else {
-                hasAnotherPage = false
-            }
-            offset += items.size()
+            items.addAll(json)
+
+            hasAnotherPage = json.size() == max
+            offset += max
 
         }
 
