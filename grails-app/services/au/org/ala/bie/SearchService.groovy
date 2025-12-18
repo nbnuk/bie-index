@@ -1195,6 +1195,9 @@ class SearchService {
             docs.each {
                 if (it.idxtype == IndexDocType.TAXON.name() && it.guid && counts.containsKey(it.guid))
                     it.put("occurrenceCount", counts.get(it.guid))
+                else if (it.idxtype == IndexDocType.TAXON.name() && it.guid && !counts.containsKey(it.guid)) { //NBN fix https://nbnatlas.atlassian.net/browse/PT-182
+                    it.put("occurrenceCount", 0)
+                }
             }
         }
         docs
