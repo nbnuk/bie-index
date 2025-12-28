@@ -229,7 +229,7 @@ class IndexService implements GrailsConfigurationAware {
      *
      * @return
      */
-    QueryResponse search(boolean online, String q, List fqs = [], List facets = [], Integer start = 0, Integer rows = 10, sort = null, dir = SolrQuery.ORDER.asc, sort2 = null, dir2 = SolrQuery.ORDER.asc, String qop = null) {
+    QueryResponse search(boolean online, String q, List fqs = [], List facets = [], Integer start = 0, Integer rows = 10, sort = null, dir = SolrQuery.ORDER.asc, sort2 = null, dir2 = SolrQuery.ORDER.asc, String qop = null, Integer flimit = null) {
         SolrQuery query = searchTemplate.getCopy()
 
         if(qop != null)
@@ -246,6 +246,11 @@ class IndexService implements GrailsConfigurationAware {
             query.facet = true
             query.facetMinCount = 1
             facets.each { query.addFacetField(it) }
+
+            if(flimit != null)
+            {
+                query.facetLimit = flimit
+            }
         }
         if (start)
             query.start = start

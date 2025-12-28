@@ -105,7 +105,7 @@ class SearchService {
      *
      * @return
      */
-    def search(String q, GrailsParameterMap params, List requestedFacets, List<Locale> locales) {
+    def search(String q, GrailsParameterMap params, List requestedFacets, List<Locale> locales, Integer flimit = null) {
         params.remove("controller") // remove Grails stuff from query
         params.remove("action") // remove Grails stuff from query
         log.debug "params = ${params.toMapString()}"
@@ -141,7 +141,7 @@ class SearchService {
             q = "*:*"
             queryTitle = "all records"
         }
-        def response = indexService.search(true, q, fqs, requestedFacets, start, rows, params.sort, params.dir, params.sort2, params.dir2, params?.q_op)
+        def response = indexService.search(true, q, fqs, requestedFacets, start, rows, params.sort, params.dir, params.sort2, params.dir2, params?.q_op, flimit)
 
         if (response.results.numFound as Integer == 0) {
 
