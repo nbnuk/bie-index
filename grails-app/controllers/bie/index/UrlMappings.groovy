@@ -4,6 +4,8 @@ class UrlMappings {
 
     static mappings = {
 
+        "/sitemap.xml"(controller: "sitemap", action: "index")
+        "/sitemap$idx.xml"(controller: "sitemap", action: "index")
 
         "/species"(controller: "search", action: "taxon")
         "/species/"(controller: "search", action: "taxon")
